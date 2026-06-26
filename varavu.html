@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Varavu</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+  :root{
+    --blue:#1565C0;--blue-light:#1976D2;--blue-dark:#0D47A1;--blue-bg:#E3F2FD;
+    --red:#C62828;--red-bg:#FFEBEE;
+    --teal:#00897B;--teal-bg:#E0F2F1;
+    --gray-bg:#F5F5F5;--gray-border:#E0E0E0;--gray-text:#757575;
+    --white:#fff;--dark:#212121;--card-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  body{background:var(--gray-bg);min-height:100vh}
+  .hidden{display:none!important}
+
+  /* Config Screen */
+  #config-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--gray-bg);padding:24px}
+  .config-card{background:white;border-radius:16px;padding:32px;max-width:480px;width:100%;box-shadow:var(--card-shadow)}
+  .config-card h2{color:var(--blue);font-size:22px;margin-bottom:8px}
+  .config-card p{color:var(--gray-text);font-size:14px;margin-bottom:24px;line-height:1.5}
+  textarea.config-input{width:100%;padding:12px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:13px;font-family:monospace;outline:none;resize:vertical;min-height:160px;transition:border-color 0.2s}
+  textarea.config-input:focus{border-color:var(--blue)}
+
+  /* Auth Screen */
+  #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1565C0 0%,#1976D2 100%)}
+  .auth-card{background:var(--white);border-radius:16px;padding:40px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+  .auth-logo{text-align:center;margin-bottom:24px}
+  .auth-logo h1{font-size:28px;font-weight:700;color:var(--blue);letter-spacing:-0.5px}
+  .auth-logo p{color:var(--gray-text);font-size:13px;margin-top:4px}
+  .auth-tabs{display:flex;border-radius:8px;background:var(--gray-bg);padding:3px;margin-bottom:24px}
+  .auth-tab{flex:1;padding:8px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gray-text);transition:all 0.2s}
+  .auth-tab.active{background:var(--white);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+  .input-group{margin-bottom:16px}
+  .input-group label{display:block;font-size:12px;font-weight:600;color:var(--gray-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+  .input-group input{width:100%;padding:11px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
+  .input-group input:focus{border-color:var(--blue)}
+  .btn-primary{width:100%;padding:12px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s}
+  .btn-primary:hover{background:var(--blue-dark)}
+  .btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+  .auth-error{color:var(--red);font-size:13px;text-align:center;margin-top:12px}
+
+  /* Main App */
+  #main-app{min-height:100vh;display:flex;flex-direction:column}
+  .top-bar{background:var(--blue);color:white;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+  .top-bar h1{font-size:20px;font-weight:700;letter-spacing:-0.3px}
+  .top-bar-actions{display:flex;align-items:center;gap:8px}
+  .icon-btn{background:rgba(255,255,255,0.15);border:none;color:white;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background 0.2s}
+  .icon-btn:hover{background:rgba(255,255,255,0.25)}
+  .lang-btn{background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.2s}
+  .lang-btn:hover{background:rgba(255,255,255,0.25)}
+
+  /* Bottom Nav */
+  .bottom-nav{background:var(--white);border-top:1px solid var(--gray-border);display:flex;position:sticky;bottom:0;z-index:100}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;border:none;background:transparent;color:var(--gray-text);font-size:11px;gap:4px;transition:color 0.2s}
+  .nav-item.active{color:var(--blue)}
+  .nav-icon{font-size:22px;line-height:1}
+
+  /* Screen Container */
+  .screen{flex:1;overflow-y:auto;padding:16px}
+
+  /* Cards */
+  .card{background:var(--white);border-radius:12px;padding:16px;box-shadow:var(--card-shadow);margin-bottom:12px}
+
+  /* Search */
+  .search-box{display:flex;align-items:center;background:var(--white);border:1.5px solid var(--gray-border);border-radius:10px;padding:0 12px;margin-bottom:16px;transition:border-color 0.2s}
+  .search-box:focus-within{border-color:var(--blue)}
+  .search-box input{flex:1;padding:10px 8px;border:none;outline:none;font-size:14px;background:transparent}
+  .search-icon{color:var(--gray-text);font-size:18px}
+
+  /* Toggle */
+  .toggle-bar{display:flex;background:var(--gray-bg);border-radius:10px;padding:3px;margin-bottom:20px}
+  .toggle-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gray-text);transition:all 0.2s}
+  .toggle-btn.active{background:var(--blue);color:white;box-shadow:0 2px 6px rgba(21,101,192,0.3)}
+
+  /* Dropdown */
+  .dropdown-wrap{position:relative;margin-bottom:14px}
+  .dropdown-wrap label{display:block;font-size:12px;font-weight:600;color:var(--gray-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+  .dropdown-search{width:100%;padding:11px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
+  .dropdown-search:focus{border-color:var(--blue)}
+  .dropdown-list{position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--blue);border-top:none;border-radius:0 0 8px 8px;max-height:180px;overflow-y:auto;z-index:50}
+  .dropdown-item{padding:10px 14px;cursor:pointer;font-size:14px;transition:background 0.15s}
+  .dropdown-item:hover{background:var(--blue-bg)}
+
+  /* Balance Card */
+  .balance-card{background:linear-gradient(135deg,#1565C0,#1976D2);border-radius:16px;padding:20px;color:white;margin-bottom:20px;box-shadow:0 4px 16px rgba(21,101,192,0.3)}
+  .balance-card h3{font-size:13px;opacity:0.85;font-weight:500;margin-bottom:4px}
+  .balance-amount{font-size:32px;font-weight:700;letter-spacing:-1px}
+  .balance-meta{display:flex;gap:16px;margin-top:14px}
+  .balance-meta-item{background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 12px;flex:1}
+  .balance-meta-item .label{font-size:11px;opacity:0.8;margin-bottom:2px}
+  .balance-meta-item .value{font-size:15px;font-weight:600}
+
+  /* Tab Pills */
+  .tab-pills{display:flex;gap:8px;margin-bottom:16px}
+  .tab-pill{padding:7px 18px;border-radius:20px;border:1.5px solid var(--gray-border);background:transparent;font-size:13px;font-weight:500;cursor:pointer;color:var(--gray-text);transition:all 0.2s}
+  .tab-pill.active{background:var(--blue);color:white;border-color:var(--blue)}
+
+  /* History Items */
+  .history-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-bg)}
+  .history-item:last-child{border-bottom:none}
+  .history-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-right:12px;flex-shrink:0}
+  .history-icon.purchase{background:var(--red-bg)}
+  .history-icon.payment{background:var(--teal-bg)}
+  .history-info{flex:1}
+  .history-info .name{font-size:14px;font-weight:500;color:var(--dark)}
+  .history-info .date{font-size:12px;color:var(--gray-text);margin-top:2px}
+  .history-amount{font-weight:600;font-size:15px}
+  .history-amount.debit{color:var(--red)}
+  .history-amount.credit{color:var(--teal)}
+
+  /* Form Fields */
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--gray-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+  .field input{width:100%;padding:11px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
+  .field input:focus{border-color:var(--blue)}
+
+  /* Customer List */
+  .customer-item{display:flex;align-items:center;padding:14px;cursor:pointer;border-radius:10px;transition:background 0.15s}
+  .customer-item:hover{background:var(--blue-bg)}
+  .customer-avatar{width:44px;height:44px;border-radius:12px;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin-right:12px;flex-shrink:0}
+  .customer-info .cname{font-size:15px;font-weight:500;color:var(--dark)}
+  .customer-info .cplace{font-size:13px;color:var(--gray-text);margin-top:2px}
+  .customer-balance{font-size:14px;font-weight:700;}
+
+  /* Toast */
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#323232;color:white;padding:12px 20px;border-radius:10px;font-size:14px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1}
+
+  /* Empty state */
+  .empty{text-align:center;padding:48px 24px;color:var(--gray-text)}
+  .empty .emoji{font-size:48px;display:block;margin-bottom:12px}
+  .empty p{font-size:15px}
+
+  /* PDF button */
+  .btn-outline{background:transparent;border:1.5px solid var(--blue);color:var(--blue);padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+  .btn-outline:hover{background:var(--blue-bg)}
+
+  .status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .badge-due{background:var(--red-bg);color:var(--red)}
+  .badge-clear{background:var(--teal-bg);color:var(--teal)}
+</style>
+</head>
+<body>
+
+<div id="config-screen">
+  <div class="config-card">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:40px;margin-bottom:8px">🏪</div>
+      <h2>Varavu Setup</h2>
+      <p>Paste your Firebase Web app configuration object JSON below to synchronize transactions live with your mobile device.</p>
+    </div>
+    <div class="input-group">
+      <label>Firebase Config (JSON)</label>
+      <textarea class="config-input" id="firebase-config-input" placeholder='{
+  "apiKey": "AIza...",
+  "authDomain": "your-app.firebaseapp.com",
+  "projectId": "your-project-id",
+  "storageBucket": "your-app.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123..."
+}'></textarea>
+    </div>
+    <button class="btn-primary" onclick="initFirebase()">Connect Firebase</button>
+    <p id="config-error" class="auth-error" style="margin-top:8px"></p>
+    <div style="margin-top:20px;padding:16px;background:var(--blue-bg);border-radius:10px">
+      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">🔒 Demo Mode</p>
+      <p style="font-size:12px;color:#1565C0;line-height:1.5">Try the app instantly with local sample data — no Firebase needed.</p>
+      <button class="btn-outline" style="margin-top:10px;width:100%;font-size:13px" onclick="startDemo()">Use Demo Mode</button>
+    </div>
+  </div>
+</div>
+
+<div id="auth-screen" class="hidden">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:36px;margin-bottom:6px">🏪</div>
+      <h1>Varavu</h1>
+      <p id="auth-subtitle" data-key="app_subtitle">Shop Credit Ledger</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')" id="tab-login" data-key="login">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')" id="tab-register" data-key="register">Register</button>
+    </div>
+    <div class="input-group">
+      <label data-key="email">Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com">
+    </div>
+    <div class="input-group">
+      <label data-key="password">Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" id="auth-btn" onclick="handleAuth()" data-key="login">Sign In</button>
+    <p id="auth-error" class="auth-error"></p>
+  </div>
+</div>
+
+<div id="main-app" class="hidden">
+  <div class="top-bar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">🏪</span>
+      <h1>Varavu</h1>
+    </div>
+    <div class="top-bar-actions">
+      <button class="lang-btn" onclick="toggleLang()" id="lang-btn">தமிழ்</button>
+      <button class="icon-btn" onclick="handleSignOut()" title="Sign out">⏏</button>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="screen-entry">
+    <div class="toggle-bar">
+      <button class="toggle-btn active" onclick="switchEntryTab('new')" id="entry-tab-new" data-key="new_customer">New Customer</button>
+      <button class="toggle-btn" onclick="switchEntryTab('existing')" id="entry-tab-existing" data-key="existing_customer">Existing Customer</button>
+    </div>
+
+    <div id="new-customer-fields">
+      <div class="field"><label data-key="name">Name</label><input type="text" id="nc-name" placeholder="Customer name"></div>
+      <div class="field"><label data-key="place">Place</label><input type="text" id="nc-place" placeholder="City / Village"></div>
+      <div class="field"><label data-key="phone">Phone</label><input type="tel" id="nc-phone" placeholder="10-digit number"></div>
+    </div>
+
+    <div id="existing-customer-fields" class="hidden">
+      <div class="dropdown-wrap">
+        <label data-key="select_customer">Select Customer</label>
+        <input type="text" class="dropdown-search" id="ec-search" placeholder="Search customer..."
+          oninput="filterCustomerDropdown()" onfocus="showDropdown()" onblur="hideDropdown()">
+        <div class="dropdown-list hidden" id="ec-dropdown"></div>
+      </div>
+    </div>
+
+    <div style="background:var(--blue-bg);border-radius:10px;padding:14px;margin-bottom:14px">
+      <p style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px" data-key="product_details">Product Details</p>
+      <div class="field"><label data-key="product_name">Product Name</label><input type="text" id="product-name" placeholder="Item / product name"></div>
+      <div class="field"><label data-key="price">Price (₹)</label><input type="number" id="product-price" placeholder="0.00" step="0.01" min="0"></div>
+    </div>
+
+    <button class="btn-primary" onclick="saveEntry()" id="save-entry-btn" data-key="save_entry">Save Entry</button>
+  </div>
+
+  <div class="screen hidden" id="screen-balance">
+    <div id="balance-list-view">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="balance-search" placeholder="Search customer..." oninput="filterBalance()">
+      </div>
+      <div id="balance-list"></div>
+    </div>
+    <div id="customer-detail" class="hidden">
+      <button onclick="backToList()" style="background:transparent;border:none;color:var(--blue);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:4px">← <span data-key="back">Back</span></button>
+      <div class="balance-card">
+        <h3 id="detail-name" style="font-size:17px;font-weight:700;opacity:1;margin-bottom:2px"></h3>
+        <p id="detail-place" style="font-size:13px;opacity:0.8;margin-bottom:12px"></p>
+        <h3 data-key="balance_due">Balance Due</h3>
+        <div class="balance-amount" id="detail-balance">₹0.00</div>
+        <div class="balance-meta">
+          <div class="balance-meta-item">
+            <div class="label" data-key="total_purchases">Total Purchases</div>
+            <div class="value" id="detail-purchases">₹0</div>
+          </div>
+          <div class="balance-meta-item">
+            <div class="label" data-key="total_paid">Total Paid</div>
+            <div class="value" id="detail-paid">₹0</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn-outline" onclick="generatePDF()" data-key="download_pdf">⬇ Download PDF</button>
+      </div>
+      <div class="tab-pills">
+        <button class="tab-pill active" onclick="switchDetailTab('purchases')" id="dtab-purchases" data-key="purchases">Purchases</button>
+        <button class="tab-pill" onclick="switchDetailTab('payments')" id="dtab-payments" data-key="payments">Payments</button>
+      </div>
+      <div class="card" style="padding:0 16px">
+        <div id="detail-history"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="screen-payment">
+    <h2 style="font-size:17px;font-weight:700;color:var(--dark);margin-bottom:16px" data-key="record_payment">Record Payment</h2>
+    <div class="dropdown-wrap">
+      <label data-key="select_customer">Select Customer</label>
+      <input type="text" class="dropdown-search" id="pay-search" placeholder="Search customer..."
+        oninput="filterPayDropdown()" onfocus="showPayDropdown()" onblur="hideDropdown('pay-dropdown')">
+      <div class="dropdown-list hidden" id="pay-dropdown"></div>
+    </div>
+    <div class="card" id="pay-customer-info" style="background:var(--blue-bg);border:1.5px solid var(--blue);margin-bottom:14px;display:none">
+      <p id="pay-cname" style="font-weight:600;color:var(--blue)"></p>
+      <p id="pay-cbalance" style="font-size:13px;color:var(--red);margin-top:4px"></p>
+    </div>
+    <div class="field">
+      <label data-key="payment_amount">Payment Amount (₹)</label>
+      <input type="number" id="pay-amount" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <button class="btn-primary" onclick="savePayment()" id="save-pay-btn" data-key="save_payment">Save Payment</button>
+  </div>
+
+  <div class="screen hidden" id="screen-customers">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="cust-search" placeholder="Search customers..." oninput="filterCustomers()">
+    </div>
+    <div id="customers-list"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchScreen('entry')" id="nav-entry">
+      <span class="nav-icon">✏️</span>
+      <span data-key="new_entry">New Entry</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('balance')" id="nav-balance">
+      <span class="nav-icon">⚖️</span>
+      <span data-key="balance">Balance</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('payment')" id="nav-payment">
+      <span class="nav-icon">💳</span>
+      <span data-key="payment">Payment</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('customers')" id="nav-customers">
+      <span class="nav-icon">👥</span>
+      <span data-key="customers">Customers</span>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// GLOBAL APPLICATION STATE
+// ══════════════════════════════════════════════════
+let db = null, auth = null;
+let lang = 'en', demoMode = false;
+let authMode = 'login';
+let entryTab = 'new', detailTab = 'purchases';
+let ecSelectedId = null, paySelectedId = null;
+let dropdownTimer = null;
+
+// Collections populated dynamically via Cloud Firestore listeners
+let customers = [], products = [], payments = [];
+let selectedCustomer = null;
+
+// Firebase listener unsubscription handle variables
+let unsubCustomers = null, unsubProducts = null, unsubPayments = null;
+
+const strings = {
+  en: {
+    login:'Sign In', register:'Register', email:'Email', password:'Password',
+    new_customer:'New Customer', existing_customer:'Existing Customer',
+    name:'Name', place:'Place', phone:'Phone',
+    product_name:'Product Name', price:'Price (₹)',
+    product_details:'Product Details', save_entry:'Save Entry',
+    balance_due:'Balance Due', total_purchases:'Total Purchases',
+    total_paid:'Total Paid', download_pdf:'⬇ Download PDF',
+    purchases:'Purchases', payments:'Payments',
+    payment_amount:'Payment Amount (₹)', save_payment:'Save Payment',
+    record_payment:'Record Payment', balance:'Balance',
+    new_entry:'New Entry', payment:'Payment', customers:'Customers',
+    select_customer:'Select Customer', back:'Back',
+    app_subtitle:'Shop Credit Ledger'
+  },
+  ta: {
+    login:'உள்நுழை', register:'பதிவு செய்', email:'மின்னஞ்சல்', password:'கடவுச்சொல்',
+    new_customer:'புதிய வாடிக்கையாளர்', existing_customer:'தற்போதுள்ள வாடிக்கையாளர்',
+    name:'பெயர்', place:'இடம்', phone:'தொலைபேசி',
+    product_name:'பொருளின் பெயர்', price:'விலை (₹)',
+    product_details:'பொருள் விவரம்', save_entry:'உள்ளீடு சேமி',
+    balance_due:'நிலுவைத் தொகை', total_purchases:'மொத்த கொள்முதல்',
+    total_paid:'மொத்த செலுத்தல்', download_pdf:'⬇ PDF பதிவிறக்கு',
+    purchases:'கொள்முதல்', payments:'செலுத்தல்கள்',
+    payment_amount:'செலுத்த தொகை (₹)', save_payment:'செலுத்தல் சேமி',
+    record_payment:'செலுத்தல் பதிவு', balance:'இருப்பு',
+    new_entry:'புதிய உள்ளீடு', payment:'செலுத்தல்', customers:'வாடிக்கையாளர்கள்',
+    select_customer:'வாடிக்கையாளரை தேர்ந்தெடு', back:'திரும்பு',
+    app_subtitle:'கடை கடன் ஏட்டு'
+  }
+};
+
+function t(key) { return strings[lang][key] || strings.en[key] || key; }
+
+function applyLang() {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const k = el.getAttribute('data-key');
+    if (el.tagName === 'INPUT') el.placeholder = t(k);
+    else el.textContent = t(k);
+  });
+  document.getElementById('lang-btn').textContent = lang === 'en' ? 'தமிழ்' : 'English';
+  const sub = document.getElementById('auth-subtitle');
+  if (sub) sub.textContent = t('app_subtitle');
+  
+  renderBalanceList();
+  renderCustomers();
+  if (selectedCustomer) {
+    showCustomerDetail(selectedCustomer.id);
+  }
+}
+
+function toggleLang() {
+  lang = lang === 'en' ? 'ta' : 'en';
+  applyLang();
+}
+
+// ══════════════════════════════════════════════════
+// FIREBASE LIVE CONNECTION ENVIRONMENT
+// ══════════════════════════════════════════════════
+function initFirebase() {
+  const errEl = document.getElementById('config-error');
+  const config = {
+    apiKey: 'AIzaSyBOsc6Hsr5JeXQmXZLw3uHMcqt114YAev4',
+    authDomain: 'varavu-a0ab4.firebaseapp.com',
+    projectId: 'varavu-a0ab4',
+    storageBucket: 'varavu-a0ab4.firebasestorage.app',
+    messagingSenderId: '407347152396',
+    appId: '1:407347152396:android:673c075b3efe30ee449029'
+  };
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+
+    document.getElementById('config-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        startApp();
+      } else {
+        detachFirestoreListeners();
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+      }
+    });
+  } catch (e) {
+    errEl.textContent = 'Connection Error: ' + e.message;
+  }
+}
+
+window.addEventListener('load', initFirebase);
+
+function startDemo() {
+  demoMode = true;
+  const today = new Date();
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  
+  customers = [
+    { id:'c1', ownerId:'demo-user', name:'Ravi Kumar', place:'Coimbatore', phone:'9876543210' },
+    { id:'c2', ownerId:'demo-user', name:'Meena Devi', place:'Tiruppur', phone:'8765432109' },
+    { id:'c3', ownerId:'demo-user', name:'Selvan', place:'Erode', phone:'7654321098' }
+  ];
+  products = [
+    { id:'p1', ownerId:'demo-user', customerId:'c1', productName:'Rice 5kg', price:350.00, date:fmt(new Date(today-86400000*5)) },
+    { id:'p2', ownerId:'demo-user', customerId:'c1', productName:'Sugar 2kg', price:90.00, date:fmt(new Date(today-86400000*3)) },
+    { id:'p4', ownerId:'demo-user', customerId:'c2', productName:'Oil 1L', price:180.00, date:fmt(new Date(today-86400000*2)) }
+  ];
+  payments = [
+    { id:'pay1', ownerId:'demo-user', customerId:'c1', amount:300.00, date:fmt(new Date(today-86400000*2)), time:'14:30', day:'Wednesday' }
+  ];
+  
+  document.getElementById('config-screen').classList.add('hidden');
+  startApp();
+}
+
+function startApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  if (!demoMode) attachFirestoreListeners();
+  else { renderBalanceList(); renderCustomers(); }
+  switchScreen('entry');
+}
+
+// ══════════════════════════════════════════════════
+// REAL-TIME FIRESTORE DATA STREAMS (SYNC ARCHITECTURE)
+// ══════════════════════════════════════════════════
+function attachFirestoreListeners() {
+  const uid = auth.currentUser.uid;
+  
+  // Real-time listener for Customers matching current workspace user
+  unsubCustomers = db.collection('customers').where('ownerId', '==', uid)
+    .onSnapshot(snapshot => {
+      customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateCurrentUIViews();
+    }, () => showToast('Error linking customers stream'));
+
+  // Real-time listener for Products matching current workspace user
+  unsubProducts = db.collection('products').where('ownerId', '==', uid)
+    .onSnapshot(snapshot => {
+      products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateCurrentUIViews();
+    }, () => showToast('Error linking products stream'));
+
+  // Real-time listener for Payments matching current workspace user
+  unsubPayments = db.collection('payments').where('ownerId', '==', uid)
+    .onSnapshot(snapshot => {
+      payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateCurrentUIViews();
+    }, () => showToast('Error linking payments stream'));
+}
+
+function detachFirestoreListeners() {
+  if (unsubCustomers) unsubCustomers();
+  if (unsubProducts) unsubProducts();
+  if (unsubPayments) unsubPayments();
+}
+
+function updateCurrentUIViews() {
+  renderBalanceList();
+  renderCustomers();
+  if (selectedCustomer) {
+    updateDetailCard();
+    renderDetailHistory();
+  }
+}
+
+// ══════════════════════════════════════════════════
+// IDENTITY ACCESS MANAGEMENT
+// ══════════════════════════════════════════════════
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('auth-btn').textContent = mode === 'login' ? t('login') : t('register');
+  document.getElementById('auth-error').textContent = '';
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pw = document.getElementById('auth-password').value;
+  const btn = document.getElementById('auth-btn');
+  const errEl = document.getElementById('auth-error');
+  if (!email || !pw) { errEl.textContent = 'Fields cannot be empty.'; return; }
+  btn.disabled = true;
+  try {
+    if (authMode === 'login') await auth.signInWithEmailAndPassword(email, pw);
+    else await auth.createUserWithEmailAndPassword(email, pw);
+    errEl.textContent = '';
+  } catch (e) { errEl.textContent = e.message; }
+  btn.disabled = false;
+}
+
+async function handleSignOut() {
+  if (demoMode) {
+    demoMode = false; customers = []; products = []; payments = [];
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('config-screen').classList.remove('hidden');
+    return;
+  }
+  await auth.signOut();
+}
+
+// ══════════════════════════════════════════════════
+// FORM NAVIGATION & CONTROLS
+// ══════════════════════════════════════════════════
+function switchScreen(s) {
+  ['entry','balance','payment','customers'].forEach(name => {
+    document.getElementById('screen-' + name).classList.toggle('hidden', name !== s);
+    document.getElementById('nav-' + name).classList.toggle('active', name === s);
+  });
+  if (s === 'balance') backToList();
+  if (s === 'customers') renderCustomers();
+}
+
+function switchEntryTab(tab) {
+  entryTab = tab;
+  document.getElementById('entry-tab-new').classList.toggle('active', tab === 'new');
+  document.getElementById('entry-tab-existing').classList.toggle('active', tab === 'existing');
+  document.getElementById('new-customer-fields').classList.toggle('hidden', tab !== 'new');
+  document.getElementById('existing-customer-fields').classList.toggle('hidden', tab !== 'existing');
+  ecSelectedId = null;
+  document.getElementById('ec-search').value = '';
+}
+
+// ══════════════════════════════════════════════════
+// TRANSACTIONS & CREDIT LEDGER CALCULATION LOGIC
+// ══════════════════════════════════════════════════
+function getBalance(cid) {
+  const totalP = products.filter(p => p.customerId === cid).reduce((s, p) => s + (p.price || 0), 0);
+  const totalPay = payments.filter(p => p.customerId === cid).reduce((s, p) => s + (p.amount || 0), 0);
+  return { totalP, totalPay, balance: totalP - totalPay };
+}
+
+function filterCustomerDropdown() {
+  const q = document.getElementById('ec-search').value.toLowerCase().trim();
+  const dl = document.getElementById('ec-dropdown');
+  if (!q) { dl.classList.add('hidden'); return; }
+  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  dl.innerHTML = filtered.map(c =>
+    `<div class="dropdown-item" onmousedown="selectEC('${c.id}','${c.name.replace(/'/g,"\\'")}')">
+      ${c.name} <span style="color:var(--gray-text);font-size:12px">· ${c.place}</span>
+    </div>`).join('');
+  dl.classList.toggle('hidden', filtered.length === 0);
+}
+
+function showDropdown() { if (document.getElementById('ec-search').value) filterCustomerDropdown(); }
+function hideDropdown(id) {
+  clearTimeout(dropdownTimer);
+  dropdownTimer = setTimeout(() => {
+    const el = document.getElementById(id || 'ec-dropdown');
+    if (el) el.classList.add('hidden');
+  }, 250);
+}
+
+function selectEC(id, name) {
+  ecSelectedId = id;
+  document.getElementById('ec-search').value = name;
+  document.getElementById('ec-dropdown').classList.add('hidden');
+}
+
+async function saveEntry() {
+  const btn = document.getElementById('save-entry-btn');
+  let customerId = ecSelectedId;
+  const uid = demoMode ? 'demo-user' : auth.currentUser.uid;
+
+  const pname = document.getElementById('product-name').value.trim();
+  const price = parseFloat(document.getElementById('product-price').value);
+  if (!pname || isNaN(price) || price <= 0) { showToast('Enter valid product name and price'); return; }
+
+  btn.disabled = true;
+
+  try {
+    if (entryTab === 'new') {
+      const name = document.getElementById('nc-name').value.trim();
+      const place = document.getElementById('nc-place').value.trim();
+      const phone = document.getElementById('nc-phone').value.trim();
+      if (!name) { showToast('Enter customer name'); btn.disabled = false; return; }
+      
+      // Duplicate validation constraint rule check
+      if (customers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        showToast('Customer already exists!'); btn.disabled = false; return;
+      }
+      
+      const newCustomerPayload = { ownerId: uid, name, place, phone };
+      if (demoMode) {
+        customerId = 'c_' + Date.now();
+        customers.push({ id: customerId, ...newCustomerPayload });
+      } else {
+        const cRef = await db.collection('customers').add(newCustomerPayload);
+        customers.push({ id: cRef.id, ...newCustomerPayload });
+        customerId = cRef.id;
+      }
+    } else {
+      if (!customerId) { showToast('Select a customer'); btn.disabled = false; return; }
+    }
+
+    // High reliability sequential write matching mobile repository requirements
+    const today = new Date();
+    const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+    const productPayload = { ownerId: uid, customerId, productName: pname, price: price, date: dateStr };
+
+    if (demoMode) {
+      products.push({ id: 'p_' + Date.now(), ...productPayload });
+      updateCurrentUIViews();
+    } else {
+      const pRef = await db.collection('products').add(productPayload);
+      products.push({ id: pRef.id, ...productPayload });
+      updateCurrentUIViews();
+    }
+
+    // Clear input form contexts smoothly
+    if (entryTab === 'new') {
+      ['nc-name','nc-place','nc-phone'].forEach(id => document.getElementById(id).value = '');
+    } else {
+      document.getElementById('ec-search').value = ''; ecSelectedId = null;
+    }
+    document.getElementById('product-name').value = '';
+    document.getElementById('product-price').value = '';
+    
+    showToast('Entry saved ✓');
+    switchScreen('balance');
+  } catch (e) { showToast('Database write failed'); }
+  btn.disabled = false;
+}
+
+// ══════════════════════════════════════════════════
+// BALANCE DISPLAY MANAGEMENT LAYER
+// ══════════════════════════════════════════════════
+function renderBalanceList() {
+  const searchInput = document.getElementById('balance-search');
+  const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  const el = document.getElementById('balance-list');
+  if (!el) return;
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty"><span class="emoji">👥</span><p>No transactions listed</p></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(c => {
+    const { balance } = getBalance(c.id);
+    const isCleared = balance <= 0;
+    return `<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showCustomerDetail('${c.id}')">
+      <div class="customer-avatar">${c.name[0].toUpperCase()}</div>
+      <div style="flex:1">
+        <p style="font-weight:600;font-size:15px;color:var(--dark)">${c.name}</p>
+        <p style="font-size:12px;color:var(--gray-text);margin-top:2px">📍 ${c.place}</p>
+      </div>
+      <div style="text-align:right">
+        <p style="font-weight:700;font-size:16px;color:${isCleared ? 'var(--teal)' : 'var(--red)'};margin-bottom:4px">₹${balance.toFixed(2)}</p>
+        <span class="status-badge ${isCleared ? 'badge-clear' : 'badge-due'}">${isCleared ? '✓ Clear' : 'Due'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterBalance() { renderBalanceList(); }
+
+function showCustomerDetail(cid) {
+  selectedCustomer = customers.find(c => c.id === cid);
+  if (!selectedCustomer) return;
+  document.getElementById('balance-list-view').classList.add('hidden');
+  document.getElementById('customer-detail').classList.remove('hidden');
+  document.getElementById('detail-name').textContent = selectedCustomer.name;
+  document.getElementById('detail-place').textContent = `📍 ${selectedCustomer.place}  📞 ${selectedCustomer.phone || '—'}`;
+  updateDetailCard();
+  renderDetailHistory();
+}
+
+function updateDetailCard() {
+  if (!selectedCustomer) return;
+  const { balance, totalP, totalPay } = getBalance(selectedCustomer.id);
+  document.getElementById('detail-balance').textContent = `₹${balance.toFixed(2)}`;
+  document.getElementById('detail-purchases').textContent = `₹${totalP.toFixed(2)}`;
+  document.getElementById('detail-paid').textContent = `₹${totalPay.toFixed(2)}`;
+}
+
+function backToList() {
+  selectedCustomer = null;
+  document.getElementById('customer-detail').classList.add('hidden');
+  document.getElementById('balance-list-view').classList.remove('hidden');
+  renderBalanceList();
+}
+
+function switchDetailTab(tab) {
+  detailTab = tab;
+  document.getElementById('dtab-purchases').classList.toggle('active', tab === 'purchases');
+  document.getElementById('dtab-payments').classList.toggle('active', tab === 'payments');
+  renderDetailHistory();
+}
+
+function renderDetailHistory() {
+  if (!selectedCustomer) return;
+  const el = document.getElementById('detail-history');
+  if (detailTab === 'purchases') {
+    const items = products.filter(p => p.customerId === selectedCustomer.id);
+    if (!items.length) { el.innerHTML = `<div class="empty"><span class="emoji">🛍️</span><p>No purchases recorded</p></div>`; return; }
+    el.innerHTML = items.map(p => `<div class="history-item">
+      <div class="history-icon purchase">🛒</div>
+      <div class="history-info"><div class="name">${p.productName}</div><div class="date">📅 ${p.date}</div></div>
+      <div class="history-amount debit">−₹${parseFloat(p.price).toFixed(2)}</div>
+    </div>`).join('');
+  } else {
+    const items = payments.filter(p => p.customerId === selectedCustomer.id);
+    if (!items.length) { el.innerHTML = `<div class="empty"><span class="emoji">💰</span><p>No payments recorded</p></div>`; return; }
+    el.innerHTML = items.map(p => `<div class="history-item">
+      <div class="history-icon payment">💵</div>
+      <div class="history-info"><div class="name">${t('payment')}</div><div class="date">📅 ${p.date} · ${p.time || ''}</div></div>
+      <div class="history-amount credit">+₹${parseFloat(p.amount).toFixed(2)}</div>
+    </div>`).join('');
+  }
+}
+
+// ══════════════════════════════════════════════════
+// RECORD PAYMENTS PROCESSING
+// ══════════════════════════════════════════════════
+function filterPayDropdown() {
+  const q = document.getElementById('pay-search').value.toLowerCase().trim();
+  const dl = document.getElementById('pay-dropdown');
+  if (!q) { dl.classList.add('hidden'); return; }
+  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  dl.innerHTML = filtered.map(c => {
+    const { balance } = getBalance(c.id);
+    return `<div class="dropdown-item" onmousedown="selectPayCustomer('${c.id}')">
+      ${c.name} <span style="color:var(--red);font-size:12px">₹${balance.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+  dl.classList.toggle('hidden', filtered.length === 0);
+}
+
+function showPayDropdown() { if (document.getElementById('pay-search').value) filterPayDropdown(); }
+
+function selectPayCustomer(id) {
+  paySelectedId = id;
+  const c = customers.find(x => x.id === id);
+  const { balance } = getBalance(id);
+  document.getElementById('pay-search').value = c.name;
+  document.getElementById('pay-dropdown').classList.add('hidden');
+  const info = document.getElementById('pay-customer-info');
+  info.style.display = 'block';
+  document.getElementById('pay-cname').textContent = `${c.name} · ${c.place}`;
+  document.getElementById('pay-cbalance').textContent = `${t('balance_due')}: ₹${balance.toFixed(2)}`;
+}
+
+async function savePayment() {
+  if (!paySelectedId) { showToast('Select a customer'); return; }
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid operational amount'); return; }
+  
+  const uid = demoMode ? 'demo-user' : auth.currentUser.uid;
+  const today = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const fmtT = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  
+  const paymentPayload = {
+    ownerId: uid, customerId: paySelectedId, amount: amount,
+    date: fmt(today), time: fmtT(today), day: days[today.getDay()]
+  };
+
+  document.getElementById('save-pay-btn').disabled = true;
+  try {
+    if (demoMode) {
+      payments.push({ id: 'pay_' + Date.now(), ...paymentPayload });
+      updateCurrentUIViews();
+    } else {
+      const payRef = await db.collection('payments').add(paymentPayload);
+      payments.push({ id: payRef.id, ...paymentPayload });
+      updateCurrentUIViews();
+    }
+    
+    document.getElementById('pay-amount').value = '';
+    document.getElementById('pay-search').value = '';
+    document.getElementById('pay-customer-info').style.display = 'none';
+    paySelectedId = null;
+    showToast('Payment recorded ✓');
+    switchScreen('balance');
+  } catch (e) { showToast('Failed to save statement'); }
+  document.getElementById('save-pay-btn').disabled = false;
+}
+
+// ══════════════════════════════════════════════════
+// CUSTOMERS COMPONENT CONTROLLER
+// ══════════════════════════════════════════════════
+function renderCustomers() {
+  const q = (document.getElementById('cust-search') || { value: '' }).value.toLowerCase().trim();
+  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  const el = document.getElementById('customers-list');
+  if (!el) return;
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty"><span class="emoji">👥</span><p>No matching entities found</p></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(c => {
+    const { balance } = getBalance(c.id);
+    const itemCount = products.filter(p => p.customerId === c.id).length;
+    return `<div class="card customer-item" onclick="switchScreen('balance');setTimeout(()=>showCustomerDetail('${c.id}'),100)">
+      <div class="customer-avatar">${c.name[0].toUpperCase()}</div>
+      <div class="customer-info" style="flex:1">
+        <div class="cname">${c.name}</div>
+        <div class="cplace">📍 ${c.place}${c.phone ? '  📞 ' + c.phone : ''}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="customer-balance" style="color:${balance <= 0 ? 'var(--teal)' : 'var(--red)'}">₹${balance.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--gray-text);margin-top:2px">${itemCount} items</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterCustomers() { renderCustomers(); }
+
+// ══════════════════════════════════════════════════
+// LOCALIZED PORTABLE REPORT EXPORT MANAGER
+// ══════════════════════════════════════════════════
+function generatePDF() {
+  if (!selectedCustomer) { showToast('Select a customer first'); return; }
+  const c = selectedCustomer;
+  const { balance, totalP, totalPay } = getBalance(c.id);
+  const prods = products.filter(p => p.customerId === c.id);
+  const pays  = payments.filter(p => p.customerId === c.id);
+  const isTa  = lang === 'ta';
+
+  const L = {
+    title:       'Varavu',
+    report:      isTa ? 'வாடிக்கையாளர் ஏட்டு அறிக்கை'  : 'Customer Ledger Report',
+    custDetails: isTa ? 'வாடிக்கையாளர் விவரம்'          : 'Customer Details',
+    name:        isTa ? 'பெயர்'                         : 'Name',
+    place:       isTa ? 'இடம்'                          : 'Place',
+    phone:       isTa ? 'தொலைபேசி'                      : 'Phone',
+    purchases:   isTa ? 'கொள்முதல்'                      : 'Purchases',
+    product:     isTa ? 'பொருள்'                         : 'Product',
+    date:        isTa ? 'தேதி'                           : 'Date',
+    amount:      isTa ? 'தொகை'                           : 'Amount',
+    payments:    isTa ? 'செலுத்தல்கள்'                   : 'Payments',
+    time:        isTa ? 'நேரம்'                          : 'Time',
+    totalPurch:  isTa ? 'மொத்த கொள்முதல்'               : 'Total Purchases',
+    totalPaid:   isTa ? 'மொத்த செலுத்தல்'               : 'Total Paid',
+    balanceDue:  isTa ? 'நிலுவைத் தொகை'                 : 'Balance Due',
+  };
+
+  const prodRows = prods.map(p =>
+    `<tr><td>${p.productName}</td><td>${p.date}</td><td style="text-align:right">₹${parseFloat(p.price).toFixed(2)}</td></tr>`
+  ).join('');
+
+  const payRows = pays.map(p =>
+    `<tr><td>${p.date}</td><td>${p.time || ''}</td><td style="text-align:right">₹${parseFloat(p.amount).toFixed(2)}</td></tr>`
+  ).join('');
+
+  const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Varavu — ${c.name}</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 32px; max-width: 700px; margin: 0 auto; color: #212121; }
+  .header { background: #1565C0; color: white; padding: 20px 24px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 24px; margin: 0; }
+  .header p { margin: 0; opacity: 0.85; font-size: 13px; }
+  h2 { font-size: 16px; color: #1565C0; border-bottom: 2px solid #1565C0; padding-bottom: 6px; margin: 20px 0 12px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th { background: #E3F2FD; color: #1565C0; padding: 8px 10px; text-align: left; font-size: 13px; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+  .summary { background: #FFEBEE; border: 2px solid #C62828; border-radius: 8px; padding: 16px 20px; margin-top: 20px; }
+  .summary p { margin: 4px 0; font-size: 14px; }
+  .summary .bal { font-size: 22px; font-weight: 700; color: #C62828; margin-top: 8px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .info-item { background: #f5f5f5; padding: 10px 14px; border-radius: 6px; }
+  .info-item .lbl { font-size: 11px; color: #757575; margin-bottom: 2px; }
+  .info-item .val { font-weight: 600; font-size: 14px; }
+  @media print { body { padding: 16px; } }
+</style>
+</head><body>
+<div class="header">
+  <div><h1>${L.title}</h1><p>${L.report}</p></div>
+  <div style="text-align:right;font-size:12px;opacity:0.85">${new Date().toLocaleDateString()}</div>
+</div>
+<h2>${L.custDetails}</h2>
+<div class="info-grid">
+  <div class="info-item"><div class="lbl">${L.name}</div><div class="val">${c.name}</div></div>
+  <div class="info-item"><div class="lbl">${L.place}</div><div class="val">${c.place}</div></div>
+  ${c.phone ? `<div class="info-item"><div class="lbl">${L.phone}</div><div class="val">${c.phone}</div></div>` : ''}
+</div>
+<h2>${L.purchases}</h2>
+<table>
+  <thead><tr><th>${L.product}</th><th>${L.date}</th><th style="text-align:right">${L.amount}</th></tr></thead>
+  <tbody>${prodRows || `<tr><td colspan="3" style="text-align:center;color:#757575">No purchases</td></tr>`}</tbody>
+</table>
+<h2>${L.payments}</h2>
+<table>
+  <thead><tr><th>${L.date}</th><th>${L.time}</th><th style="text-align:right">${L.amount}</th></tr></thead>
+  <tbody>${payRows || `<tr><td colspan="3" style="text-align:center;color:#757575">No payments</td></tr>`}</tbody>
+</table>
+<div class="summary">
+  <p>${L.totalPurch}: <strong>₹${totalP.toFixed(2)}</strong></p>
+  <p>${L.totalPaid}: <strong style="color:#00897B">₹${totalPay.toFixed(2)}</strong></p>
+  <div class="bal">${L.balanceDue}: ₹${balance.toFixed(2)}</div>
+</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Varavu_${c.name.replace(/\s+/g, '_')}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Report downloaded ✓');
+}
+
+// ══════════════════════════════════════════════════
+// ALERTS (TOAST OVERLAYS)
+// ══════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
