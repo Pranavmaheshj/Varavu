@@ -268,7 +268,9 @@
           </div>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
+        <button class="btn-outline" onclick="openEditCustomer()">✏ Edit</button>
+        <button class="btn-outline" onclick="confirmDeleteCustomer()" style="border-color:#C62828;color:#C62828">🗑 Delete</button>
         <button class="btn-outline" onclick="generatePDF()" data-key="download_pdf">⬇ Download PDF</button>
       </div>
       <div class="tab-pills">
@@ -329,6 +331,18 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Edit Customer Modal -->
+<div id="edit-customer-modal" class="card hidden" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;z-index:1000">
+  <h3 style="margin-bottom:8px">Edit Customer</h3>
+  <div class="field"><label>Name</label><input type="text" id="edit-name" placeholder="Name"></div>
+  <div class="field"><label>Place</label><input type="text" id="edit-place" placeholder="Place"></div>
+  <div class="field"><label>Phone</label><input type="text" id="edit-phone" placeholder="Phone"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <button class="btn-outline" onclick="cancelEditCustomer()">Cancel</button>
+    <button class="btn-primary" onclick="saveCustomerEdits()">Save</button>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════
@@ -410,14 +424,51 @@ function toggleLang() {
 // ══════════════════════════════════════════════════
 function initFirebase() {
   const errEl = document.getElementById('config-error');
-  const config = {
-    apiKey: 'AIzaSyBOsc6Hsr5JeXQmXZLw3uHMcqt114YAev4',
-    authDomain: 'varavu-a0ab4.firebaseapp.com',
-    projectId: 'varavu-a0ab4',
-    storageBucket: 'varavu-a0ab4.firebasestorage.app',
-    messagingSenderId: '407347152396',
-    appId: '1:407347152396:android:673c075b3efe30ee449029'
-  };
+  errEl.textContent = '';
+  // If user pasted JSON into textarea, try to parse and construct web config
+  const raw = (document.getElementById('firebase-config-input') || { value: '' }).value.trim();
+  let config = null;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      // If user pasted standard web config object
+      if (parsed.apiKey || parsed.api_key) {
+        config = {
+          apiKey: parsed.apiKey || parsed.api_key,
+          authDomain: parsed.authDomain || parsed.auth_domain || (parsed.projectId ? parsed.projectId + '.firebaseapp.com' : ''),
+          projectId: parsed.projectId || parsed.project_id,
+          storageBucket: parsed.storageBucket || parsed.storage_bucket,
+          messagingSenderId: parsed.messagingSenderId || parsed.messaging_sender_id,
+          appId: parsed.appId || parsed.app_id
+        };
+      } else if (parsed.project_info) {
+        // Support google-services.json style payloads
+        config = {
+          apiKey: parsed.client?.[0]?.api_key?.[0]?.current_key || '',
+          authDomain: parsed.project_info?.project_id ? parsed.project_info.project_id + '.firebaseapp.com' : '',
+          projectId: parsed.project_info?.project_id || '',
+          storageBucket: parsed.project_info?.storage_bucket || parsed.project_info?.storageBucket || '',
+          messagingSenderId: parsed.project_number || '',
+          appId: parsed.client?.[0]?.client_info?.mobilesdk_app_id || ''
+        };
+      } else {
+        throw new Error('Unrecognized JSON shape for Firebase config');
+      }
+    } catch (e) {
+      errEl.textContent = 'Invalid JSON: ' + e.message;
+      return;
+    }
+  } else {
+    // fallback to built-in demo project config
+    config = {
+      apiKey: 'AIzaSyBOsc6Hsr5JeXQmXZLw3uHMcqt114YAev4',
+      authDomain: 'varavu-a0ab4.firebaseapp.com',
+      projectId: 'varavu-a0ab4',
+      storageBucket: 'varavu-a0ab4.firebasestorage.app',
+      messagingSenderId: '407347152396',
+      appId: '1:407347152396:android:673c075b3efe30ee449029'
+    };
+  }
 
   try {
     if (!firebase.apps.length) firebase.initializeApp(config);
@@ -641,7 +692,6 @@ async function saveEntry() {
         customers.push({ id: customerId, ...newCustomerPayload });
       } else {
         const cRef = await db.collection('customers').add(newCustomerPayload);
-        customers.push({ id: cRef.id, ...newCustomerPayload });
         customerId = cRef.id;
       }
     } else {
@@ -657,9 +707,7 @@ async function saveEntry() {
       products.push({ id: 'p_' + Date.now(), ...productPayload });
       updateCurrentUIViews();
     } else {
-      const pRef = await db.collection('products').add(productPayload);
-      products.push({ id: pRef.id, ...productPayload });
-      updateCurrentUIViews();
+      await db.collection('products').add(productPayload);
     }
 
     // Clear input form contexts smoothly
@@ -817,9 +865,7 @@ async function savePayment() {
       payments.push({ id: 'pay_' + Date.now(), ...paymentPayload });
       updateCurrentUIViews();
     } else {
-      const payRef = await db.collection('payments').add(paymentPayload);
-      payments.push({ id: payRef.id, ...paymentPayload });
-      updateCurrentUIViews();
+      await db.collection('payments').add(paymentPayload);
     }
     
     document.getElementById('pay-amount').value = '';
@@ -958,6 +1004,99 @@ function generatePDF() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('Report downloaded ✓');
+}
+
+// ══════════════════════════════════════════════════
+// EDIT / DELETE CUSTOMER - open modal, save edits, cascade delete
+// ══════════════════════════════════════════════════
+function openEditCustomer() {
+  if (!selectedCustomer) return;
+  document.getElementById('edit-name').value = selectedCustomer.name || '';
+  document.getElementById('edit-place').value = selectedCustomer.place || '';
+  document.getElementById('edit-phone').value = selectedCustomer.phone || '';
+  document.getElementById('edit-customer-modal').classList.remove('hidden');
+}
+
+function cancelEditCustomer() {
+  document.getElementById('edit-customer-modal').classList.add('hidden');
+}
+
+async function saveCustomerEdits() {
+  if (!selectedCustomer) return;
+  const id = selectedCustomer.id;
+  const name = document.getElementById('edit-name').value.trim();
+  const place = document.getElementById('edit-place').value.trim();
+  const phone = document.getElementById('edit-phone').value.trim();
+  if (!name) { showToast('Name is required'); return; }
+
+  const payload = { name, place, phone };
+  const saveBtn = document.querySelector('#edit-customer-modal .btn-primary');
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    if (demoMode) {
+      const idx = customers.findIndex(c => c.id === id);
+      if (idx !== -1) {
+        customers[idx] = { ...customers[idx], ...payload };
+        selectedCustomer = customers[idx];
+      }
+      updateCurrentUIViews();
+    } else {
+      await db.collection('customers').doc(id).update(payload);
+      const idx = customers.findIndex(c => c.id === id);
+      if (idx !== -1) {
+        customers[idx] = { ...customers[idx], ...payload };
+        selectedCustomer = customers[idx];
+      }
+      updateCurrentUIViews();
+    }
+    cancelEditCustomer();
+    showToast('Customer updated ✓');
+  } catch (e) {
+    showToast('Failed to update customer');
+  }
+  if (saveBtn) saveBtn.disabled = false;
+}
+
+function confirmDeleteCustomer() {
+  if (!selectedCustomer) return;
+  const ok = confirm('Delete this customer and all related transactions?');
+  if (!ok) return;
+  doDeleteCustomer(selectedCustomer.id);
+}
+
+async function doDeleteCustomer(id) {
+  const uid = demoMode ? 'demo-user' : auth.currentUser.uid;
+  try {
+    if (demoMode) {
+      customers = customers.filter(c => c.id !== id);
+      products = products.filter(p => p.customerId !== id);
+      payments = payments.filter(p => p.customerId !== id);
+      selectedCustomer = null;
+      backToList();
+      updateCurrentUIViews();
+      showToast('Customer deleted ✓');
+      return;
+    }
+
+    // Firestore: delete customer doc and related products/payments
+    await db.collection('customers').doc(id).delete();
+
+    const prodSnap = await db.collection('products').where('ownerId', '==', uid).where('customerId', '==', id).get();
+    prodSnap.forEach(doc => doc.ref.delete());
+
+    const paySnap = await db.collection('payments').where('ownerId', '==', uid).where('customerId', '==', id).get();
+    paySnap.forEach(doc => doc.ref.delete());
+
+    customers = customers.filter(c => c.id !== id);
+    products = products.filter(p => p.customerId !== id);
+    payments = payments.filter(p => p.customerId !== id);
+    selectedCustomer = null;
+    backToList();
+    updateCurrentUIViews();
+    showToast('Customer deleted ✓');
+  } catch (e) {
+    showToast('Failed to delete customer');
+  }
 }
 
 // ══════════════════════════════════════════════════
