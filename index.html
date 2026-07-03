@@ -7,7 +7,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
   :root{
@@ -166,10 +165,6 @@
   "messagingSenderId": "123456789",
   "appId": "1:123..."
 }'></textarea>
-    </div>
-    <div class="input-group">
-      <label>App Check Site Key (optional)</label>
-      <input type="text" id="app-check-key-input" placeholder="reCAPTCHA site key">
     </div>
     <button class="btn-primary" onclick="initFirebase()">Connect Firebase</button>
     <p id="config-error" class="auth-error" style="margin-top:8px"></p>
@@ -359,7 +354,6 @@ let authMode = 'login';
 let entryTab = 'new', detailTab = 'purchases';
 let ecSelectedId = null, paySelectedId = null;
 let dropdownTimer = null;
-let appCheckEnabled = false;
 
 // Collections populated dynamically via Cloud Firestore listeners
 let customers = [], products = [], payments = [];
@@ -431,50 +425,15 @@ function toggleLang() {
 function initFirebase() {
   const errEl = document.getElementById('config-error');
   errEl.textContent = '';
-  // If user pasted JSON into textarea, try to parse and construct web config
-  const raw = (document.getElementById('firebase-config-input') || { value: '' }).value.trim();
-  let config = null;
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      // If user pasted standard web config object
-      if (parsed.apiKey || parsed.api_key) {
-        config = {
-          apiKey: parsed.apiKey || parsed.api_key,
-          authDomain: parsed.authDomain || parsed.auth_domain || (parsed.projectId ? parsed.projectId + '.firebaseapp.com' : ''),
-          projectId: parsed.projectId || parsed.project_id,
-          storageBucket: parsed.storageBucket || parsed.storage_bucket,
-          messagingSenderId: parsed.messagingSenderId || parsed.messaging_sender_id,
-          appId: parsed.appId || parsed.app_id
-        };
-      } else if (parsed.project_info) {
-        // Support google-services.json style payloads
-        config = {
-          apiKey: parsed.client?.[0]?.api_key?.[0]?.current_key || '',
-          authDomain: parsed.project_info?.project_id ? parsed.project_info.project_id + '.firebaseapp.com' : '',
-          projectId: parsed.project_info?.project_id || '',
-          storageBucket: parsed.project_info?.storage_bucket || parsed.project_info?.storageBucket || '',
-          messagingSenderId: parsed.project_number || '',
-          appId: parsed.client?.[0]?.client_info?.mobilesdk_app_id || ''
-        };
-      } else {
-        throw new Error('Unrecognized JSON shape for Firebase config');
-      }
-    } catch (e) {
-      errEl.textContent = 'Invalid JSON: ' + e.message;
-      return;
-    }
-  } else {
-    // fallback to built-in demo project config
-    config = {
-      apiKey: 'AIzaSyBOsc6Hsr5JeXQmXZLw3uHMcqt114YAev4',
-      authDomain: 'varavu-a0ab4.firebaseapp.com',
-      projectId: 'varavu-a0ab4',
-      storageBucket: 'varavu-a0ab4.firebasestorage.app',
-      messagingSenderId: '407347152396',
-      appId: '1:407347152396:android:673c075b3efe30ee449029'
-    };
-  }
+  // Use built-in app config for simplicity (no JSON paste required)
+  const config = {
+    apiKey: 'AIzaSyBOsc6Hsr5JeXQmXZLw3uHMcqt114YAev4',
+    authDomain: 'varavu-a0ab4.firebaseapp.com',
+    projectId: 'varavu-a0ab4',
+    storageBucket: 'varavu-a0ab4.firebasestorage.app',
+    messagingSenderId: '407347152396',
+    appId: '1:407347152396:android:673c075b3efe30ee449029'
+  };
 
   try {
     if (!firebase.apps.length) firebase.initializeApp(config);
@@ -482,16 +441,7 @@ function initFirebase() {
     auth = firebase.auth();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
 
-    const appCheckSiteKey = parsed?.appCheckSiteKey || parsed?.app_check_site_key || document.getElementById('app-check-key-input').value.trim();
-    if (appCheckSiteKey) {
-      try {
-        firebase.appCheck().activate(appCheckSiteKey, true);
-        appCheckEnabled = true;
-      } catch (e) {
-        console.warn('App Check initialization failed', e);
-      }
-    }
-
+    // Proceed immediately to auth screen
     document.getElementById('config-screen').classList.add('hidden');
     document.getElementById('auth-screen').classList.remove('hidden');
 
@@ -596,17 +546,6 @@ function switchAuthTab(mode) {
   document.getElementById('auth-error').textContent = '';
 }
 
-async function refreshAppCheckToken() {
-  if (!appCheckEnabled || !firebase.appCheck) return true;
-  try {
-    await firebase.appCheck().getToken(true);
-    return true;
-  } catch (e) {
-    console.warn('App Check token refresh failed', e);
-    return false;
-  }
-}
-
 async function handleAuth() {
   const email = document.getElementById('auth-email').value.trim();
   const pw = document.getElementById('auth-password').value;
@@ -615,10 +554,6 @@ async function handleAuth() {
   if (!email || !pw) { errEl.textContent = 'Fields cannot be empty.'; return; }
   btn.disabled = true;
   try {
-    if (appCheckEnabled) {
-      const ok = await refreshAppCheckToken();
-      if (!ok) { errEl.textContent = 'App Check token refresh failed.'; btn.disabled = false; return; }
-    }
     if (authMode === 'login') await auth.signInWithEmailAndPassword(email, pw);
     else await auth.createUserWithEmailAndPassword(email, pw);
     errEl.textContent = '';
