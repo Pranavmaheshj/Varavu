@@ -148,7 +148,7 @@
 </head>
 <body>
 
-<div id="config-screen">
+<div id="config-screen" class="hidden">
   <div class="config-card">
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:40px;margin-bottom:8px">🏪</div>
@@ -169,14 +169,19 @@
     <button class="btn-primary" onclick="initFirebase()">Connect Firebase</button>
     <p id="config-error" class="auth-error" style="margin-top:8px"></p>
     <div style="margin-top:20px;padding:16px;background:var(--blue-bg);border-radius:10px">
-      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">🔒 Demo Mode</p>
+      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">� Android App</p>
+      <p style="font-size:12px;color:#1565C0;line-height:1.5">Download the Android APK to install Varavu on your phone.</p>
+      <a class="btn-outline" style="margin-top:10px;width:100%;font-size:13px;display:inline-block;text-align:center;text-decoration:none" href="/app-universal-debug.apk" download="app-universal-debug.apk">Download APK</a>
+    </div>
+    <div style="margin-top:16px;padding:16px;background:var(--blue-bg);border-radius:10px">
+      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">�🔒 Demo Mode</p>
       <p style="font-size:12px;color:#1565C0;line-height:1.5">Try the app instantly with local sample data — no Firebase needed.</p>
       <button class="btn-outline" style="margin-top:10px;width:100%;font-size:13px" onclick="startDemo()">Use Demo Mode</button>
     </div>
   </div>
 </div>
 
-<div id="auth-screen" class="hidden">
+<div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">
       <div style="font-size:36px;margin-bottom:6px">🏪</div>
