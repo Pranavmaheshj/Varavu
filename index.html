@@ -54,6 +54,8 @@
   .icon-btn:hover{background:rgba(255,255,255,0.25)}
   .lang-btn{background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.2s}
   .lang-btn:hover{background:rgba(255,255,255,0.25)}
+  .apk-btn{background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.2s;text-decoration:none;display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .apk-btn:hover{background:rgba(255,255,255,0.25)}
 
   /* Bottom Nav */
   .bottom-nav{background:var(--white);border-top:1px solid var(--gray-border);display:flex;position:sticky;bottom:0;z-index:100}
@@ -169,12 +171,12 @@
     <button class="btn-primary" onclick="initFirebase()">Connect Firebase</button>
     <p id="config-error" class="auth-error" style="margin-top:8px"></p>
     <div style="margin-top:20px;padding:16px;background:var(--blue-bg);border-radius:10px">
-      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">� Android App</p>
+      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">📱 Android App</p>
       <p style="font-size:12px;color:#1565C0;line-height:1.5">Download the Android APK to install Varavu on your phone.</p>
       <a class="btn-outline" style="margin-top:10px;width:100%;font-size:13px;display:inline-block;text-align:center;text-decoration:none" href="/app-universal-debug.apk" download="app-universal-debug.apk">Download APK</a>
     </div>
     <div style="margin-top:16px;padding:16px;background:var(--blue-bg);border-radius:10px">
-      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">�🔒 Demo Mode</p>
+      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">🔒 Demo Mode</p>
       <p style="font-size:12px;color:#1565C0;line-height:1.5">Try the app instantly with local sample data — no Firebase needed.</p>
       <button class="btn-outline" style="margin-top:10px;width:100%;font-size:13px" onclick="startDemo()">Use Demo Mode</button>
     </div>
@@ -212,6 +214,7 @@
       <h1>Varavu</h1>
     </div>
     <div class="top-bar-actions">
+      <a class="apk-btn" href="/app-universal-debug.apk" download="app-universal-debug.apk" title="Download Android APK">⬇ APK</a>
       <button class="lang-btn" onclick="toggleLang()" id="lang-btn">தமிழ்</button>
       <button class="icon-btn" onclick="handleSignOut()" title="Sign out">⏏</button>
     </div>
