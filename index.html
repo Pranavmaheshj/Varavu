@@ -115,6 +115,9 @@
   .history-amount{font-weight:600;font-size:15px}
   .history-amount.debit{color:var(--red)}
   .history-amount.credit{color:var(--teal)}
+  .history-actions{display:flex;align-items:center;gap:8px;margin-left:8px}
+  .history-action-btn{background:transparent;border:1px solid var(--gray-border);color:var(--blue);padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px}
+  .history-action-btn:hover{background:var(--blue-bg)}
 
   /* Form Fields */
   .field{margin-bottom:14px}
@@ -173,7 +176,7 @@
     <div style="margin-top:20px;padding:16px;background:var(--blue-bg);border-radius:10px">
       <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">📱 Android App</p>
       <p style="font-size:12px;color:#1565C0;line-height:1.5">Download the Android APK to install Varavu on your phone.</p>
-      <a class="btn-outline" style="margin-top:10px;width:100%;font-size:13px;display:inline-block;text-align:center;text-decoration:none" href="https://github.com/Pranavmaheshj/Varavu/releases/download/v1.0/app-universal-debug.apk" download="/app-universal-debug.apk">Download APK</a>
+      <a class="btn-outline" style="margin-top:10px;width:100%;font-size:13px;display:inline-block;text-align:center;text-decoration:none" href="/app-universal-debug.apk" download="app-universal-debug.apk">Download APK</a>
     </div>
     <div style="margin-top:16px;padding:16px;background:var(--blue-bg);border-radius:10px">
       <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">🔒 Demo Mode</p>
@@ -214,7 +217,7 @@
       <h1>Varavu</h1>
     </div>
     <div class="top-bar-actions">
-      <a class="apk-btn" href="https://github.com/Pranavmaheshj/Varavu/releases/download/v1.0/app-universal-debug.apk" download="app-universal-debug.apk" title="Download Android APK">⬇ APK</a>
+      <a class="apk-btn" href="/app-universal-debug.apk" download="app-universal-debug.apk" title="Download Android APK">⬇ APK</a>
       <button class="lang-btn" onclick="toggleLang()" id="lang-btn">தமிழ்</button>
       <button class="icon-btn" onclick="handleSignOut()" title="Sign out">⏏</button>
     </div>
@@ -349,6 +352,18 @@
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
     <button class="btn-outline" onclick="cancelEditCustomer()">Cancel</button>
     <button class="btn-primary" onclick="saveCustomerEdits()">Save</button>
+  </div>
+</div>
+
+<div id="edit-amount-modal" class="card hidden" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:360px;z-index:1000">
+  <h3 style="margin-bottom:8px" id="edit-amount-title">Edit Amount</h3>
+  <div class="field">
+    <label id="edit-amount-label">Amount (₹)</label>
+    <input type="number" id="edit-amount-input" placeholder="0.00" step="0.01" min="0">
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <button class="btn-outline" onclick="cancelEditAmount()">Cancel</button>
+    <button class="btn-primary" onclick="saveAmountEdits()">Save</button>
   </div>
 </div>
 
@@ -773,7 +788,10 @@ function renderDetailHistory() {
     el.innerHTML = items.map(p => `<div class="history-item">
       <div class="history-icon purchase">🛒</div>
       <div class="history-info"><div class="name">${p.productName}</div><div class="date">📅 ${p.date}</div></div>
-      <div class="history-amount debit">−₹${parseFloat(p.price).toFixed(2)}</div>
+      <div class="history-actions">
+        <div class="history-amount debit">−₹${parseFloat(p.price).toFixed(2)}</div>
+        <button class="history-action-btn" onclick="openEditAmount('purchase','${p.id}')" title="Edit amount">✏</button>
+      </div>
     </div>`).join('');
   } else {
     const items = payments.filter(p => p.customerId === selectedCustomer.id);
@@ -781,7 +799,10 @@ function renderDetailHistory() {
     el.innerHTML = items.map(p => `<div class="history-item">
       <div class="history-icon payment">💵</div>
       <div class="history-info"><div class="name">${t('payment')}</div><div class="date">📅 ${p.date} · ${p.time || ''}</div></div>
-      <div class="history-amount credit">+₹${parseFloat(p.amount).toFixed(2)}</div>
+      <div class="history-actions">
+        <div class="history-amount credit">+₹${parseFloat(p.amount).toFixed(2)}</div>
+        <button class="history-action-btn" onclick="openEditAmount('payment','${p.id}')" title="Edit amount">✏</button>
+      </div>
     </div>`).join('');
   }
 }
@@ -978,6 +999,74 @@ function generatePDF() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('Report downloaded ✓');
+}
+
+// ══════════════════════════════════════════════════
+// EDIT TRANSACTION AMOUNT
+// ══════════════════════════════════════════════════
+let amountEditMode = null;
+let amountEditId = null;
+
+function openEditAmount(type, id) {
+  amountEditMode = type;
+  amountEditId = id;
+  const titleEl = document.getElementById('edit-amount-title');
+  const labelEl = document.getElementById('edit-amount-label');
+  const inputEl = document.getElementById('edit-amount-input');
+
+  if (type === 'purchase') {
+    const item = products.find(p => p.id === id);
+    if (!item) return;
+    titleEl.textContent = 'Edit Purchase Amount';
+    labelEl.textContent = 'Amount (₹)';
+    inputEl.value = parseFloat(item.price || 0).toFixed(2);
+  } else {
+    const item = payments.find(p => p.id === id);
+    if (!item) return;
+    titleEl.textContent = 'Edit Payment Amount';
+    labelEl.textContent = 'Amount (₹)';
+    inputEl.value = parseFloat(item.amount || 0).toFixed(2);
+  }
+
+  document.getElementById('edit-amount-modal').classList.remove('hidden');
+}
+
+function cancelEditAmount() {
+  document.getElementById('edit-amount-modal').classList.add('hidden');
+  amountEditMode = null;
+  amountEditId = null;
+}
+
+async function saveAmountEdits() {
+  if (!amountEditMode || !amountEditId) return;
+  const amount = parseFloat(document.getElementById('edit-amount-input').value);
+  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount'); return; }
+
+  try {
+    if (amountEditMode === 'purchase') {
+      const payload = { price: amount };
+      if (demoMode) {
+        const idx = products.findIndex(p => p.id === amountEditId);
+        if (idx !== -1) products[idx] = { ...products[idx], ...payload };
+      } else {
+        await db.collection('products').doc(amountEditId).update(payload);
+      }
+    } else {
+      const payload = { amount };
+      if (demoMode) {
+        const idx = payments.findIndex(p => p.id === amountEditId);
+        if (idx !== -1) payments[idx] = { ...payments[idx], ...payload };
+      } else {
+        await db.collection('payments').doc(amountEditId).update(payload);
+      }
+    }
+
+    cancelEditAmount();
+    updateCurrentUIViews();
+    showToast('Amount updated ✓');
+  } catch (e) {
+    showToast('Failed to update amount');
+  }
 }
 
 // ══════════════════════════════════════════════════
