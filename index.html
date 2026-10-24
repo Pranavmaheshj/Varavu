@@ -8,161 +8,836 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
-  :root{
-    --blue:#1565C0;--blue-light:#1976D2;--blue-dark:#0D47A1;--blue-bg:#E3F2FD;
-    --red:#C62828;--red-bg:#FFEBEE;
-    --teal:#00897B;--teal-bg:#E0F2F1;
-    --gray-bg:#F5F5F5;--gray-border:#E0E0E0;--gray-text:#757575;
-    --white:#fff;--dark:#212121;--card-shadow:0 2px 8px rgba(0,0,0,0.08);
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", system-ui, sans-serif; }
+  
+  :root {
+    --primary: #2563EB;
+    --primary-hover: #1D4ED8;
+    --primary-dark: #1E3A8A;
+    --primary-light: #60A5FA;
+    --primary-tint: rgba(37, 99, 235, 0.1);
+    
+    --success: #059669;
+    --success-bg: rgba(16, 185, 129, 0.12);
+    --success-border: rgba(16, 185, 129, 0.25);
+    
+    --danger: #DC2626;
+    --danger-bg: rgba(239, 68, 68, 0.12);
+    --danger-border: rgba(239, 68, 68, 0.25);
+    
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --text-sub: #475569;
+    
+    --glass-bg: rgba(255, 255, 255, 0.76);
+    --glass-border: rgba(255, 255, 255, 0.85);
+    --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.06);
+    --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.95);
   }
-  body{background:var(--gray-bg);min-height:100vh}
-  .hidden{display:none!important}
+
+  body {
+    background-color: #F8FAFC;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.14) 0px, transparent 48%),
+      radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 45%),
+      radial-gradient(at 50% 35%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 45%),
+      radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .hidden { display: none !important; }
+
+  /* App Shell Container */
+  .app-shell {
+    max-width: 580px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 0 60px rgba(15, 23, 42, 0.06);
+  }
 
   /* Config Screen */
-  #config-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--gray-bg);padding:24px}
-  .config-card{background:white;border-radius:16px;padding:32px;max-width:480px;width:100%;box-shadow:var(--card-shadow)}
-  .config-card h2{color:var(--blue);font-size:22px;margin-bottom:8px}
-  .config-card p{color:var(--gray-text);font-size:14px;margin-bottom:24px;line-height:1.5}
-  textarea.config-input{width:100%;padding:12px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:13px;font-family:monospace;outline:none;resize:vertical;min-height:160px;transition:border-color 0.2s}
-  textarea.config-input:focus{border-color:var(--blue)}
+  #config-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .config-card {
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 36px 30px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.15), var(--glass-inset);
+  }
+  .config-card h2 { color: var(--primary); font-size: 24px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+  .config-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
+  textarea.config-input {
+    width: 100%;
+    padding: 13px 15px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(203, 213, 225, 0.8);
+    border-radius: 12px;
+    font-size: 13px;
+    font-family: monospace;
+    outline: none;
+    resize: vertical;
+    min-height: 150px;
+    transition: all 0.2s ease;
+    color: var(--text-main);
+  }
+  textarea.config-input:focus {
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3.5px var(--primary-tint);
+  }
 
   /* Auth Screen */
-  #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1565C0 0%,#1976D2 100%)}
-  .auth-card{background:var(--white);border-radius:16px;padding:40px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
-  .auth-logo{text-align:center;margin-bottom:24px}
-  .auth-logo h1{font-size:28px;font-weight:700;color:var(--blue);letter-spacing:-0.5px}
-  .auth-logo p{color:var(--gray-text);font-size:13px;margin-top:4px}
-  .auth-tabs{display:flex;border-radius:8px;background:var(--gray-bg);padding:3px;margin-bottom:24px}
-  .auth-tab{flex:1;padding:8px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gray-text);transition:all 0.2s}
-  .auth-tab.active{background:var(--white);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
-  .input-group{margin-bottom:16px}
-  .input-group label{display:block;font-size:12px;font-weight:600;color:var(--gray-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
-  .input-group input{width:100%;padding:11px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
-  .input-group input:focus{border-color:var(--blue)}
-  .btn-primary{width:100%;padding:12px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s}
-  .btn-primary:hover{background:var(--blue-dark)}
-  .btn-primary:disabled{opacity:0.6;cursor:not-allowed}
-  .auth-error{color:var(--red);font-size:13px;text-align:center;margin-top:12px}
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .auth-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 390px;
+    box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.18), var(--glass-inset);
+  }
+  .auth-logo { text-align: center; margin-bottom: 26px; }
+  .auth-logo .logo-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.18));
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 12px auto;
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.15);
+  }
+  .auth-logo h1 { font-size: 28px; font-weight: 800; color: var(--primary-dark); letter-spacing: -0.6px; }
+  .auth-logo p { color: var(--text-muted); font-size: 13.5px; margin-top: 4px; font-weight: 500; }
+  
+  .auth-tabs {
+    display: flex;
+    border-radius: 14px;
+    background: rgba(226, 232, 240, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 4px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .auth-tab.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  }
+
+  .input-group { margin-bottom: 16px; }
+  .input-group label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .input-group input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(203, 213, 225, 0.8);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--text-main);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .input-group input:focus {
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3.5px var(--primary-tint);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  
+  .auth-error {
+    color: var(--danger);
+    font-size: 13px;
+    text-align: center;
+    margin-top: 12px;
+    font-weight: 500;
+  }
 
   /* Main App */
-  #main-app{min-height:100vh;display:flex;flex-direction:column}
-  .top-bar{background:var(--blue);color:white;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
-  .top-bar h1{font-size:20px;font-weight:700;letter-spacing:-0.3px}
-  .top-bar-actions{display:flex;align-items:center;gap:8px}
-  .icon-btn{background:rgba(255,255,255,0.15);border:none;color:white;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background 0.2s}
-  .icon-btn:hover{background:rgba(255,255,255,0.25)}
-  .lang-btn{background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.2s}
-  .lang-btn:hover{background:rgba(255,255,255,0.25)}
-  .apk-btn{background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.2s;text-decoration:none;display:flex;align-items:center;gap:6px;white-space:nowrap}
-  .apk-btn:hover{background:rgba(255,255,255,0.25)}
+  #main-app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Top Bar (Acrylic Frosted) */
+  .top-bar {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    color: white;
+    padding: 0 18px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  .top-bar h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+  .top-bar-actions { display: flex; align-items: center; gap: 8px; }
+  
+  .icon-btn, .lang-btn, .apk-btn {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-btn { width: 36px; height: 36px; font-size: 16px; }
+  .lang-btn { padding: 7px 12px; }
+  .apk-btn { padding: 7px 12px; gap: 6px; text-decoration: none; white-space: nowrap; }
+  
+  .icon-btn:hover, .lang-btn:hover, .apk-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+  }
 
-  /* Bottom Nav */
-  .bottom-nav{background:var(--white);border-top:1px solid var(--gray-border);display:flex;position:sticky;bottom:0;z-index:100}
-  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;border:none;background:transparent;color:var(--gray-text);font-size:11px;gap:4px;transition:color 0.2s}
-  .nav-item.active{color:var(--blue)}
-  .nav-icon{font-size:22px;line-height:1}
+  /* Bottom Nav (Acrylic Frosted) */
+  .bottom-nav {
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.06);
+    padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 4px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 12px;
+    gap: 3px;
+    transition: all 0.2s ease;
+  }
+  .nav-item:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .nav-item.active {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.08);
+  }
+  .nav-icon { font-size: 19px; line-height: 1; transition: transform 0.2s ease; }
+  .nav-item.active .nav-icon { transform: scale(1.15); }
 
   /* Screen Container */
-  .screen{flex:1;overflow-y:auto;padding:16px}
+  .screen { flex: 1; overflow-y: auto; padding: 18px 16px 28px 16px; }
 
-  /* Cards */
-  .card{background:var(--white);border-radius:12px;padding:16px;box-shadow:var(--card-shadow);margin-bottom:12px}
+  /* Cards (Acrylic Frosted) */
+  .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), var(--glass-inset);
+    margin-bottom: 12px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
-  /* Search */
-  .search-box{display:flex;align-items:center;background:var(--white);border:1.5px solid var(--gray-border);border-radius:10px;padding:0 12px;margin-bottom:16px;transition:border-color 0.2s}
-  .search-box:focus-within{border-color:var(--blue)}
-  .search-box input{flex:1;padding:10px 8px;border:none;outline:none;font-size:14px;background:transparent}
-  .search-icon{color:var(--gray-text);font-size:18px}
+  /* Search Box */
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 2px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), var(--glass-inset);
+    transition: all 0.25s ease;
+  }
+  .search-box:focus-within {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: var(--primary);
+    box-shadow: 0 8px 24px -2px rgba(37, 99, 235, 0.15), 0 0 0 3px var(--primary-tint);
+  }
+  .search-box input {
+    flex: 1;
+    padding: 11px 8px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    color: var(--text-main);
+    font-weight: 500;
+  }
+  .search-box input::placeholder { color: #94A3B8; }
+  .search-icon { color: #94A3B8; font-size: 16px; }
 
-  /* Toggle */
-  .toggle-bar{display:flex;background:var(--gray-bg);border-radius:10px;padding:3px;margin-bottom:20px}
-  .toggle-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gray-text);transition:all 0.2s}
-  .toggle-btn.active{background:var(--blue);color:white;box-shadow:0 2px 6px rgba(21,101,192,0.3)}
+  /* List Meta Bar (Alphabetical count info) */
+  .list-meta-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 6px 12px 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .sort-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 11px;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+  }
 
-  /* Dropdown */
-  .dropdown-wrap{position:relative;margin-bottom:14px}
-  .dropdown-wrap label{display:block;font-size:12px;font-weight:600;color:var(--gray-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
-  .dropdown-search{width:100%;padding:11px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
-  .dropdown-search:focus{border-color:var(--blue)}
-  .dropdown-list{position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--blue);border-top:none;border-radius:0 0 8px 8px;max-height:180px;overflow-y:auto;z-index:50}
-  .dropdown-item{padding:10px 14px;cursor:pointer;font-size:14px;transition:background 0.15s}
-  .dropdown-item:hover{background:var(--blue-bg)}
+  /* Alphabetical Divider */
+  .alpha-divider {
+    display: flex;
+    align-items: center;
+    margin: 14px 0 8px 0;
+    padding-left: 2px;
+  }
+  .alpha-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-hover);
+    font-weight: 700;
+    font-size: 13px;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+  }
+  .alpha-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.25), transparent);
+    margin-left: 10px;
+  }
 
-  /* Balance Card */
-  .balance-card{background:linear-gradient(135deg,#1565C0,#1976D2);border-radius:16px;padding:20px;color:white;margin-bottom:20px;box-shadow:0 4px 16px rgba(21,101,192,0.3)}
-  .balance-card h3{font-size:13px;opacity:0.85;font-weight:500;margin-bottom:4px}
-  .balance-amount{font-size:32px;font-weight:700;letter-spacing:-1px}
-  .balance-meta{display:flex;gap:16px;margin-top:14px}
-  .balance-meta-item{background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 12px;flex:1}
-  .balance-meta-item .label{font-size:11px;opacity:0.8;margin-bottom:2px}
-  .balance-meta-item .value{font-size:15px;font-weight:600}
+  /* Toggle Bar */
+  .toggle-bar {
+    display: flex;
+    background: rgba(226, 232, 240, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .toggle-btn.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  }
+
+  /* Dropdown (Acrylic) */
+  .dropdown-wrap { position: relative; margin-bottom: 16px; }
+  .dropdown-wrap label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .dropdown-search {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(203, 213, 225, 0.8);
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    color: var(--text-main);
+  }
+  .dropdown-search:focus {
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3.5px var(--primary-tint);
+  }
+  .dropdown-list {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 150;
+    box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(0, 0, 0, 0.04);
+    padding: 6px;
+  }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+    gap: 10px;
+  }
+  .dropdown-item:hover {
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary);
+  }
+  .dropdown-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--primary-tint);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .dropdown-name { font-weight: 600; }
+  .dropdown-sub { color: var(--text-muted); font-size: 12px; }
+  .dropdown-balance { font-size: 12px; font-weight: 700; margin-left: auto; }
+  .dropdown-balance.due { color: var(--danger); }
+  .dropdown-balance.clear { color: var(--success); }
+
+  /* Balance Card (Luminous Azure Frost) */
+  .balance-card {
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.94) 0%, rgba(37, 99, 235, 0.92) 55%, rgba(14, 165, 233, 0.88) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 22px;
+    padding: 24px;
+    color: white;
+    margin-bottom: 20px;
+    box-shadow: 0 16px 36px -6px rgba(37, 99, 235, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    position: relative;
+    overflow: hidden;
+  }
+  .balance-card::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .balance-card h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    opacity: 0.9;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .balance-amount {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 4px 0 16px 0;
+  }
+  .balance-meta { display: flex; gap: 12px; }
+  .balance-meta-item {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+    padding: 10px 14px;
+    flex: 1;
+  }
+  .balance-meta-item .label {
+    font-size: 11px;
+    opacity: 0.85;
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+  .balance-meta-item .value { font-size: 16px; font-weight: 700; }
 
   /* Tab Pills */
-  .tab-pills{display:flex;gap:8px;margin-bottom:16px}
-  .tab-pill{padding:7px 18px;border-radius:20px;border:1.5px solid var(--gray-border);background:transparent;font-size:13px;font-weight:500;cursor:pointer;color:var(--gray-text);transition:all 0.2s}
-  .tab-pill.active{background:var(--blue);color:white;border-color:var(--blue)}
+  .tab-pills { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-pill {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(203, 213, 225, 0.8);
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tab-pill.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
 
   /* History Items */
-  .history-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-bg)}
-  .history-item:last-child{border-bottom:none}
-  .history-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-right:12px;flex-shrink:0}
-  .history-icon.purchase{background:var(--red-bg)}
-  .history-icon.payment{background:var(--teal-bg)}
-  .history-info{flex:1}
-  .history-info .name{font-size:14px;font-weight:500;color:var(--dark)}
-  .history-info .date{font-size:12px;color:var(--gray-text);margin-top:2px}
-  .history-amount{font-weight:600;font-size:15px}
-  .history-amount.debit{color:var(--red)}
-  .history-amount.credit{color:var(--teal)}
-  .history-actions{display:flex;align-items:center;gap:8px;margin-left:8px}
-  .history-action-btn{background:transparent;border:1px solid var(--gray-border);color:var(--blue);padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px}
-  .history-action-btn:hover{background:var(--blue-bg)}
+  .history-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-right: 14px;
+    flex-shrink: 0;
+  }
+  .history-icon.purchase { background: var(--danger-bg); border: 1px solid var(--danger-border); }
+  .history-icon.payment { background: var(--success-bg); border: 1px solid var(--success-border); }
+  .history-info { flex: 1; }
+  .history-info .name { font-size: 14.5px; font-weight: 600; color: var(--text-main); }
+  .history-info .date { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
+  .history-amount { font-weight: 700; font-size: 15px; }
+  .history-amount.debit { color: var(--danger); }
+  .history-amount.credit { color: var(--success); }
+  .history-actions { display: flex; align-items: center; gap: 8px; margin-left: 10px; }
+  .history-action-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    color: var(--primary);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+  .history-action-btn:hover {
+    background: var(--primary-tint);
+    border-color: var(--primary);
+  }
 
   /* Form Fields */
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:12px;font-weight:600;color:var(--gray-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
-  .field input{width:100%;padding:11px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
-  .field input:focus{border-color:var(--blue)}
+  .field { margin-bottom: 15px; }
+  .field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(203, 213, 225, 0.8);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--text-main);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .field input:focus {
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3.5px var(--primary-tint);
+  }
 
-  /* Customer List */
-  .customer-item{display:flex;align-items:center;padding:14px;cursor:pointer;border-radius:10px;transition:background 0.15s}
-  .customer-item:hover{background:var(--blue-bg)}
-  .customer-avatar{width:44px;height:44px;border-radius:12px;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin-right:12px;flex-shrink:0}
-  .customer-info .cname{font-size:15px;font-weight:500;color:var(--dark)}
-  .customer-info .cplace{font-size:13px;color:var(--gray-text);margin-top:2px}
-  .customer-balance{font-size:14px;font-weight:700;}
+  /* Customer Item & Avatar */
+  .customer-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    border-radius: 16px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .customer-item:hover {
+    background: rgba(255, 255, 255, 0.94);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -2px rgba(37, 99, 235, 0.12), var(--glass-inset);
+    border-color: rgba(37, 99, 235, 0.25);
+  }
+  .customer-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(14, 165, 233, 0.18));
+    color: var(--primary);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 17px;
+    margin-right: 14px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  }
+  .customer-info .cname { font-size: 15px; font-weight: 600; color: var(--text-main); }
+  .customer-info .cplace { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
+  .customer-balance { font-size: 15px; font-weight: 700; }
+  .badge-due-text { color: var(--danger); }
+  .badge-clear-text { color: var(--success); }
 
-  /* Toast */
-  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#323232;color:white;padding:12px 20px;border-radius:10px;font-size:14px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
-  .toast.show{opacity:1}
+  /* Outline Buttons */
+  .btn-outline {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-outline:hover {
+    background: var(--primary-tint);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  }
 
-  /* Empty state */
-  .empty{text-align:center;padding:48px 24px;color:var(--gray-text)}
-  .empty .emoji{font-size:48px;display:block;margin-bottom:12px}
-  .empty p{font-size:15px}
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .badge-due {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
+  }
+  .badge-clear {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success-border);
+  }
 
-  /* PDF button */
-  .btn-outline{background:transparent;border:1.5px solid var(--blue);color:var(--blue);padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
-  .btn-outline:hover{background:var(--blue-bg)}
+  /* Modals & Backdrop */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999;
+    transition: opacity 0.25s ease;
+  }
+  .modal-card {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.28), var(--glass-inset);
+    padding: 24px;
+  }
+  .modal-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 14px; color: var(--text-main); }
 
-  .status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
-  .badge-due{background:var(--red-bg);color:var(--red)}
-  .badge-clear{background:var(--teal-bg);color:var(--teal)}
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: white;
+    padding: 12px 22px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    z-index: 1050;
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Empty State */
+  .empty { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+  .empty .emoji { font-size: 44px; display: block; margin-bottom: 12px; }
+  .empty p { font-size: 14.5px; font-weight: 500; }
 </style>
 </head>
 <body>
 
-<div id="config-screen" class="hidden">
-  <div class="config-card">
-    <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:40px;margin-bottom:8px">🏪</div>
-      <h2>Varavu Setup</h2>
-      <p>Paste your Firebase Web app configuration object JSON below to synchronize transactions live with your mobile device.</p>
-    </div>
-    <div class="input-group">
-      <label>Firebase Config (JSON)</label>
-      <textarea class="config-input" id="firebase-config-input" placeholder='{
+<div class="app-shell">
+
+  <!-- Config Screen -->
+  <div id="config-screen" class="hidden">
+    <div class="config-card">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:42px;margin-bottom:8px">🏪</div>
+        <h2>Varavu Setup</h2>
+        <p>Paste your Firebase Web app configuration JSON below to synchronize transactions live across your devices.</p>
+      </div>
+      <div class="input-group">
+        <label>Firebase Config (JSON)</label>
+        <textarea class="config-input" id="firebase-config-input" placeholder='{
   "apiKey": "AIza...",
   "authDomain": "your-app.firebaseapp.com",
   "projectId": "your-project-id",
@@ -170,201 +845,219 @@
   "messagingSenderId": "123456789",
   "appId": "1:123..."
 }'></textarea>
-    </div>
-    <button class="btn-primary" onclick="initFirebase()">Connect Firebase</button>
-    <p id="config-error" class="auth-error" style="margin-top:8px"></p>
-    <div style="margin-top:20px;padding:16px;background:var(--blue-bg);border-radius:10px">
-      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">📱 Android App</p>
-      <p style="font-size:12px;color:#1565C0;line-height:1.5">Download the Android APK to install Varavu on your phone.</p>
-      <a class="btn-outline" style="margin-top:10px;width:100%;font-size:13px;display:inline-block;text-align:center;text-decoration:none" href="https://github.com/Pranavmaheshj/Varavu/releases/download/v1.0/app-universal-debug.apk" download="Varavu.apk">Download APK</a>
-    </div>
-    <div style="margin-top:16px;padding:16px;background:var(--blue-bg);border-radius:10px">
-      <p style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">🔒 Demo Mode</p>
-      <p style="font-size:12px;color:#1565C0;line-height:1.5">Try the app instantly with local sample data — no Firebase needed.</p>
-      <button class="btn-outline" style="margin-top:10px;width:100%;font-size:13px" onclick="startDemo()">Use Demo Mode</button>
-    </div>
-  </div>
-</div>
-
-<div id="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div style="font-size:36px;margin-bottom:6px">🏪</div>
-      <h1>Varavu</h1>
-      <p id="auth-subtitle" data-key="app_subtitle">Shop Credit Ledger</p>
-    </div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login')" id="tab-login" data-key="login">Sign In</button>
-      <button class="auth-tab" onclick="switchAuthTab('register')" id="tab-register" data-key="register">Register</button>
-    </div>
-    <div class="input-group">
-      <label data-key="email">Email</label>
-      <input type="email" id="auth-email" placeholder="you@example.com">
-    </div>
-    <div class="input-group">
-      <label data-key="password">Password</label>
-      <input type="password" id="auth-password" placeholder="••••••••">
-    </div>
-    <button class="btn-primary" id="auth-btn" onclick="handleAuth()" data-key="login">Sign In</button>
-    <p id="auth-error" class="auth-error"></p>
-  </div>
-</div>
-
-<div id="main-app" class="hidden">
-  <div class="top-bar">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:20px">🏪</span>
-      <h1>Varavu</h1>
-    </div>
-    <div class="top-bar-actions">
-      <a class="apk-btn" href="https://github.com/Pranavmaheshj/Varavu/releases/download/v1.0/app-universal-debug.apk" download="Varavu.apk" title="Download Android APK">⬇ APK</a>
-      <button class="lang-btn" onclick="toggleLang()" id="lang-btn">தமிழ்</button>
-      <button class="icon-btn" onclick="handleSignOut()" title="Sign out">⏏</button>
+      </div>
+      <button class="btn-primary" onclick="initFirebase()">Connect Firebase</button>
+      <p id="config-error" class="auth-error"></p>
+      
+      <div class="card" style="margin-top:20px;background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.2)">
+        <p style="font-size:12.5px;color:var(--primary);font-weight:700;margin-bottom:4px">📱 Android App</p>
+        <p style="font-size:12px;color:var(--text-sub);line-height:1.5">Download the Android APK to install Varavu on your smartphone.</p>
+        <a class="btn-outline" style="margin-top:10px;width:100%;font-size:13px;display:block;text-align:center;text-decoration:none" href="https://github.com/Pranavmaheshj/Varavu/releases/download/v1.0/app-universal-debug.apk" download="Varavu.apk">Download APK</a>
+      </div>
+      
+      <div class="card" style="margin-top:12px;background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.2)">
+        <p style="font-size:12.5px;color:var(--primary);font-weight:700;margin-bottom:4px">🔒 Demo Mode</p>
+        <p style="font-size:12px;color:var(--text-sub);line-height:1.5">Explore the app immediately with sample data sorted A-Z — no setup needed.</p>
+        <button class="btn-outline" style="margin-top:10px;width:100%;font-size:13px" onclick="startDemo()">Use Demo Mode</button>
+      </div>
     </div>
   </div>
 
-  <div class="screen hidden" id="screen-entry">
-    <div class="toggle-bar">
-      <button class="toggle-btn active" onclick="switchEntryTab('new')" id="entry-tab-new" data-key="new_customer">New Customer</button>
-      <button class="toggle-btn" onclick="switchEntryTab('existing')" id="entry-tab-existing" data-key="existing_customer">Existing Customer</button>
+  <!-- Auth Screen -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="logo-icon">🏪</div>
+        <h1>Varavu</h1>
+        <p id="auth-subtitle" data-key="app_subtitle">Shop Credit Ledger</p>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')" id="tab-login" data-key="login">Sign In</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')" id="tab-register" data-key="register">Register</button>
+      </div>
+      <div class="input-group">
+        <label data-key="email">Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com">
+      </div>
+      <div class="input-group">
+        <label data-key="password">Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••">
+      </div>
+      <button class="btn-primary" id="auth-btn" onclick="handleAuth()" data-key="login">Sign In</button>
+      <p id="auth-error" class="auth-error"></p>
     </div>
+  </div>
 
-    <div id="new-customer-fields">
-      <div class="field"><label data-key="name">Name</label><input type="text" id="nc-name" placeholder="Customer name"></div>
-      <div class="field"><label data-key="place">Place</label><input type="text" id="nc-place" placeholder="City / Village"></div>
-      <div class="field"><label data-key="phone">Phone</label><input type="tel" id="nc-phone" placeholder="10-digit number"></div>
-    </div>
-
-    <div id="existing-customer-fields" class="hidden">
-      <div class="dropdown-wrap">
-        <label data-key="select_customer">Select Customer</label>
-        <input type="text" class="dropdown-search" id="ec-search" placeholder="Search customer..."
-          oninput="filterCustomerDropdown()" onfocus="showDropdown()" onblur="hideDropdown()">
-        <div class="dropdown-list hidden" id="ec-dropdown"></div>
+  <!-- Main App -->
+  <div id="main-app" class="hidden">
+    <div class="top-bar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">🏪</span>
+        <h1>Varavu</h1>
+      </div>
+      <div class="top-bar-actions">
+        <a class="apk-btn" href="https://github.com/Pranavmaheshj/Varavu/releases/download/v1.0/app-universal-debug.apk" download="Varavu.apk" title="Download Android APK">⬇ APK</a>
+        <button class="lang-btn" onclick="toggleLang()" id="lang-btn">தமிழ்</button>
+        <button class="icon-btn" onclick="handleSignOut()" title="Sign out">⏏</button>
       </div>
     </div>
 
-    <div style="background:var(--blue-bg);border-radius:10px;padding:14px;margin-bottom:14px">
-      <p style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px" data-key="product_details">Product Details</p>
-      <div class="field"><label data-key="product_name">Product Name</label><input type="text" id="product-name" placeholder="Item / product name"></div>
-      <div class="field"><label data-key="price">Price (₹)</label><input type="number" id="product-price" placeholder="0.00" step="0.01" min="0"></div>
-    </div>
-
-    <button class="btn-primary" onclick="saveEntry()" id="save-entry-btn" data-key="save_entry">Save Entry</button>
-  </div>
-
-  <div class="screen hidden" id="screen-balance">
-    <div id="balance-list-view">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="balance-search" placeholder="Search customer..." oninput="filterBalance()">
+    <!-- Screen 1: New Entry -->
+    <div class="screen hidden" id="screen-entry">
+      <div class="toggle-bar">
+        <button class="toggle-btn active" onclick="switchEntryTab('new')" id="entry-tab-new" data-key="new_customer">New Customer</button>
+        <button class="toggle-btn" onclick="switchEntryTab('existing')" id="entry-tab-existing" data-key="existing_customer">Existing Customer</button>
       </div>
-      <div id="balance-list"></div>
-    </div>
-    <div id="customer-detail" class="hidden">
-      <button onclick="backToList()" style="background:transparent;border:none;color:var(--blue);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:4px">← <span data-key="back">Back</span></button>
-      <div class="balance-card">
-        <h3 id="detail-name" style="font-size:17px;font-weight:700;opacity:1;margin-bottom:2px"></h3>
-        <p id="detail-place" style="font-size:13px;opacity:0.8;margin-bottom:12px"></p>
-        <h3 data-key="balance_due">Balance Due</h3>
-        <div class="balance-amount" id="detail-balance">₹0.00</div>
-        <div class="balance-meta">
-          <div class="balance-meta-item">
-            <div class="label" data-key="total_purchases">Total Purchases</div>
-            <div class="value" id="detail-purchases">₹0</div>
-          </div>
-          <div class="balance-meta-item">
-            <div class="label" data-key="total_paid">Total Paid</div>
-            <div class="value" id="detail-paid">₹0</div>
-          </div>
+
+      <div id="new-customer-fields">
+        <div class="field"><label data-key="name">Name</label><input type="text" id="nc-name" placeholder="Customer name"></div>
+        <div class="field"><label data-key="place">Place</label><input type="text" id="nc-place" placeholder="City / Village"></div>
+        <div class="field"><label data-key="phone">Phone</label><input type="tel" id="nc-phone" placeholder="10-digit number"></div>
+      </div>
+
+      <div id="existing-customer-fields" class="hidden">
+        <div class="dropdown-wrap">
+          <label data-key="select_customer">Select Customer (A → Z)</label>
+          <input type="text" class="dropdown-search" id="ec-search" placeholder="Search customer alphabetically..."
+            oninput="filterCustomerDropdown()" onfocus="showDropdown()" onblur="hideDropdown('ec-dropdown')">
+          <div class="dropdown-list hidden" id="ec-dropdown"></div>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
-        <button class="btn-outline" onclick="openEditCustomer()">✏ Edit</button>
-        <button class="btn-outline" onclick="confirmDeleteCustomer()" style="border-color:#C62828;color:#C62828">🗑 Delete</button>
-        <button class="btn-outline" onclick="generatePDF()" data-key="download_pdf">⬇ Download PDF</button>
+
+      <div class="card" style="background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.2);margin-bottom:18px">
+        <p style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.6px" data-key="product_details">Product Details</p>
+        <div class="field"><label data-key="product_name">Product Name</label><input type="text" id="product-name" placeholder="Item / product name"></div>
+        <div class="field"><label data-key="price">Price (₹)</label><input type="number" id="product-price" placeholder="0.00" step="0.01" min="0"></div>
       </div>
-      <div class="tab-pills">
-        <button class="tab-pill active" onclick="switchDetailTab('purchases')" id="dtab-purchases" data-key="purchases">Purchases</button>
-        <button class="tab-pill" onclick="switchDetailTab('payments')" id="dtab-payments" data-key="payments">Payments</button>
+
+      <button class="btn-primary" onclick="saveEntry()" id="save-entry-btn" data-key="save_entry">Save Entry</button>
+    </div>
+
+    <!-- Screen 2: Balance -->
+    <div class="screen hidden" id="screen-balance">
+      <div id="balance-list-view">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="balance-search" placeholder="Search customer (A to Z)..." oninput="filterBalance()">
+        </div>
+        <div id="balance-list"></div>
       </div>
-      <div class="card" style="padding:0 16px">
-        <div id="detail-history"></div>
+      
+      <div id="customer-detail" class="hidden">
+        <button onclick="backToList()" style="background:transparent;border:none;color:var(--primary);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:6px">
+          ← <span data-key="back">Back</span>
+        </button>
+        <div class="balance-card">
+          <h3 id="detail-name" style="font-size:19px;font-weight:800;opacity:1;margin-bottom:3px"></h3>
+          <p id="detail-place" style="font-size:13px;opacity:0.85;margin-bottom:14px"></p>
+          <h3 data-key="balance_due">Balance Due</h3>
+          <div class="balance-amount" id="detail-balance">₹0.00</div>
+          <div class="balance-meta">
+            <div class="balance-meta-item">
+              <div class="label" data-key="total_purchases">Total Purchases</div>
+              <div class="value" id="detail-purchases">₹0</div>
+            </div>
+            <div class="balance-meta-item">
+              <div class="label" data-key="total_paid">Total Paid</div>
+              <div class="value" id="detail-paid">₹0</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn-outline" onclick="openEditCustomer()">✏ Edit</button>
+          <button class="btn-outline" onclick="confirmDeleteCustomer()" style="border-color:var(--danger);color:var(--danger)">🗑 Delete</button>
+          <button class="btn-outline" onclick="generatePDF()" data-key="download_pdf">⬇ Download PDF</button>
+        </div>
+        <div class="tab-pills">
+          <button class="tab-pill active" onclick="switchDetailTab('purchases')" id="dtab-purchases" data-key="purchases">Purchases</button>
+          <button class="tab-pill" onclick="switchDetailTab('payments')" id="dtab-payments" data-key="payments">Payments</button>
+        </div>
+        <div class="card" style="padding:4px 16px">
+          <div id="detail-history"></div>
+        </div>
       </div>
+    </div>
+
+    <!-- Screen 3: Payment -->
+    <div class="screen hidden" id="screen-payment">
+      <h2 style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:16px;letter-spacing:-0.3px" data-key="record_payment">Record Payment</h2>
+      <div class="dropdown-wrap">
+        <label data-key="select_customer">Select Customer (A → Z)</label>
+        <input type="text" class="dropdown-search" id="pay-search" placeholder="Search customer alphabetically..."
+          oninput="filterPayDropdown()" onfocus="showPayDropdown()" onblur="hideDropdown('pay-dropdown')">
+        <div class="dropdown-list hidden" id="pay-dropdown"></div>
+      </div>
+      <div class="card" id="pay-customer-info" style="background:rgba(37,99,235,0.06);border:1.5px solid var(--primary);margin-bottom:16px;display:none">
+        <p id="pay-cname" style="font-weight:700;color:var(--primary);font-size:15px"></p>
+        <p id="pay-cbalance" style="font-size:13.5px;color:var(--danger);margin-top:4px;font-weight:600"></p>
+      </div>
+      <div class="field">
+        <label data-key="payment_amount">Payment Amount (₹)</label>
+        <input type="number" id="pay-amount" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <button class="btn-primary" onclick="savePayment()" id="save-pay-btn" data-key="save_payment">Save Payment</button>
+    </div>
+
+    <!-- Screen 4: Customers -->
+    <div class="screen hidden" id="screen-customers">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="cust-search" placeholder="Search customers (A to Z)..." oninput="filterCustomers()">
+      </div>
+      <div id="customers-list"></div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="switchScreen('entry')" id="nav-entry">
+        <span class="nav-icon">✏️</span>
+        <span data-key="new_entry">New Entry</span>
+      </button>
+      <button class="nav-item" onclick="switchScreen('balance')" id="nav-balance">
+        <span class="nav-icon">⚖️</span>
+        <span data-key="balance">Balance</span>
+      </button>
+      <button class="nav-item" onclick="switchScreen('payment')" id="nav-payment">
+        <span class="nav-icon">💳</span>
+        <span data-key="payment">Payment</span>
+      </button>
+      <button class="nav-item" onclick="switchScreen('customers')" id="nav-customers">
+        <span class="nav-icon">👥</span>
+        <span data-key="customers">Customers</span>
+      </button>
     </div>
   </div>
 
-  <div class="screen hidden" id="screen-payment">
-    <h2 style="font-size:17px;font-weight:700;color:var(--dark);margin-bottom:16px" data-key="record_payment">Record Payment</h2>
-    <div class="dropdown-wrap">
-      <label data-key="select_customer">Select Customer</label>
-      <input type="text" class="dropdown-search" id="pay-search" placeholder="Search customer..."
-        oninput="filterPayDropdown()" onfocus="showPayDropdown()" onblur="hideDropdown('pay-dropdown')">
-      <div class="dropdown-list hidden" id="pay-dropdown"></div>
+  <div class="toast" id="toast"></div>
+
+  <!-- Modal Backdrop Overlay -->
+  <div id="modal-backdrop" class="modal-backdrop hidden" onclick="closeAllModals()"></div>
+
+  <!-- Edit Customer Modal -->
+  <div id="edit-customer-modal" class="modal-card hidden">
+    <h3>Edit Customer Details</h3>
+    <div class="field"><label>Name</label><input type="text" id="edit-name" placeholder="Name"></div>
+    <div class="field"><label>Place</label><input type="text" id="edit-place" placeholder="Place"></div>
+    <div class="field"><label>Phone</label><input type="text" id="edit-phone" placeholder="Phone"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn-outline" onclick="cancelEditCustomer()">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="saveCustomerEdits()">Save</button>
     </div>
-    <div class="card" id="pay-customer-info" style="background:var(--blue-bg);border:1.5px solid var(--blue);margin-bottom:14px;display:none">
-      <p id="pay-cname" style="font-weight:600;color:var(--blue)"></p>
-      <p id="pay-cbalance" style="font-size:13px;color:var(--red);margin-top:4px"></p>
-    </div>
+  </div>
+
+  <!-- Edit Amount Modal -->
+  <div id="edit-amount-modal" class="modal-card hidden">
+    <h3 id="edit-amount-title">Edit Amount</h3>
     <div class="field">
-      <label data-key="payment_amount">Payment Amount (₹)</label>
-      <input type="number" id="pay-amount" placeholder="0.00" step="0.01" min="0">
+      <label id="edit-amount-label">Amount (₹)</label>
+      <input type="number" id="edit-amount-input" placeholder="0.00" step="0.01" min="0">
     </div>
-    <button class="btn-primary" onclick="savePayment()" id="save-pay-btn" data-key="save_payment">Save Payment</button>
-  </div>
-
-  <div class="screen hidden" id="screen-customers">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="cust-search" placeholder="Search customers..." oninput="filterCustomers()">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn-outline" onclick="cancelEditAmount()">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="saveAmountEdits()">Save</button>
     </div>
-    <div id="customers-list"></div>
   </div>
 
-  <div class="bottom-nav">
-    <button class="nav-item active" onclick="switchScreen('entry')" id="nav-entry">
-      <span class="nav-icon">✏️</span>
-      <span data-key="new_entry">New Entry</span>
-    </button>
-    <button class="nav-item" onclick="switchScreen('balance')" id="nav-balance">
-      <span class="nav-icon">⚖️</span>
-      <span data-key="balance">Balance</span>
-    </button>
-    <button class="nav-item" onclick="switchScreen('payment')" id="nav-payment">
-      <span class="nav-icon">💳</span>
-      <span data-key="payment">Payment</span>
-    </button>
-    <button class="nav-item" onclick="switchScreen('customers')" id="nav-customers">
-      <span class="nav-icon">👥</span>
-      <span data-key="customers">Customers</span>
-    </button>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- Edit Customer Modal -->
-<div id="edit-customer-modal" class="card hidden" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;z-index:1000">
-  <h3 style="margin-bottom:8px">Edit Customer</h3>
-  <div class="field"><label>Name</label><input type="text" id="edit-name" placeholder="Name"></div>
-  <div class="field"><label>Place</label><input type="text" id="edit-place" placeholder="Place"></div>
-  <div class="field"><label>Phone</label><input type="text" id="edit-phone" placeholder="Phone"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button class="btn-outline" onclick="cancelEditCustomer()">Cancel</button>
-    <button class="btn-primary" onclick="saveCustomerEdits()">Save</button>
-  </div>
-</div>
-
-<div id="edit-amount-modal" class="card hidden" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:360px;z-index:1000">
-  <h3 style="margin-bottom:8px" id="edit-amount-title">Edit Amount</h3>
-  <div class="field">
-    <label id="edit-amount-label">Amount (₹)</label>
-    <input type="number" id="edit-amount-input" placeholder="0.00" step="0.01" min="0">
-  </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button class="btn-outline" onclick="cancelEditAmount()">Cancel</button>
-    <button class="btn-primary" onclick="saveAmountEdits()">Save</button>
-  </div>
 </div>
 
 <script>
@@ -420,6 +1113,24 @@ const strings = {
 
 function t(key) { return strings[lang][key] || strings.en[key] || key; }
 
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[m]));
+}
+
+// ══════════════════════════════════════════════════
+// ALPHABETICAL ORDER SORTING LOGIC
+// ══════════════════════════════════════════════════
+function sortCustomersList() {
+  customers.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+}
+
 function applyLang() {
   document.querySelectorAll('[data-key]').forEach(el => {
     const k = el.getAttribute('data-key');
@@ -448,7 +1159,7 @@ function toggleLang() {
 function initFirebase() {
   const errEl = document.getElementById('config-error');
   errEl.textContent = '';
-  // Use built-in app config for simplicity (no JSON paste required)
+
   const config = {
     apiKey: 'AIzaSyBOsc6Hsr5JeXQmXZLw3uHMcqt114YAev4',
     authDomain: 'varavu-a0ab4.firebaseapp.com',
@@ -464,7 +1175,6 @@ function initFirebase() {
     auth = firebase.auth();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
 
-    // Proceed immediately to auth screen
     document.getElementById('config-screen').classList.add('hidden');
     document.getElementById('auth-screen').classList.remove('hidden');
 
@@ -490,17 +1200,22 @@ function startDemo() {
   const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
   
   customers = [
-    { id:'c1', ownerId:'demo-user', name:'Ravi Kumar', place:'Coimbatore', phone:'9876543210' },
+    { id:'c4', ownerId:'demo-user', name:'Anand Kumar', place:'Salem', phone:'9123456780' },
     { id:'c2', ownerId:'demo-user', name:'Meena Devi', place:'Tiruppur', phone:'8765432109' },
+    { id:'c1', ownerId:'demo-user', name:'Ravi Kumar', place:'Coimbatore', phone:'9876543210' },
     { id:'c3', ownerId:'demo-user', name:'Selvan', place:'Erode', phone:'7654321098' }
   ];
+  sortCustomersList();
+
   products = [
     { id:'p1', ownerId:'demo-user', customerId:'c1', productName:'Rice 5kg', price:350.00, date:fmt(new Date(today-86400000*5)) },
     { id:'p2', ownerId:'demo-user', customerId:'c1', productName:'Sugar 2kg', price:90.00, date:fmt(new Date(today-86400000*3)) },
-    { id:'p4', ownerId:'demo-user', customerId:'c2', productName:'Oil 1L', price:180.00, date:fmt(new Date(today-86400000*2)) }
+    { id:'p4', ownerId:'demo-user', customerId:'c2', productName:'Oil 1L', price:180.00, date:fmt(new Date(today-86400000*2)) },
+    { id:'p5', ownerId:'demo-user', customerId:'c4', productName:'Dal 1kg', price:140.00, date:fmt(new Date(today-86400000*1)) }
   ];
   payments = [
-    { id:'pay1', ownerId:'demo-user', customerId:'c1', amount:300.00, date:fmt(new Date(today-86400000*2)), time:'14:30', day:'Wednesday' }
+    { id:'pay1', ownerId:'demo-user', customerId:'c1', amount:300.00, date:fmt(new Date(today-86400000*2)), time:'14:30', day:'Wednesday' },
+    { id:'pay2', ownerId:'demo-user', customerId:'c4', amount:140.00, date:fmt(today), time:'10:15', day:'Thursday' }
   ];
   
   document.getElementById('config-screen').classList.add('hidden');
@@ -521,21 +1236,19 @@ function startApp() {
 function attachFirestoreListeners() {
   const uid = auth.currentUser.uid;
   
-  // Real-time listener for Customers matching current workspace user
   unsubCustomers = db.collection('customers').where('ownerId', '==', uid)
     .onSnapshot(snapshot => {
       customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      sortCustomersList();
       updateCurrentUIViews();
     }, () => showToast('Error linking customers stream'));
 
-  // Real-time listener for Products matching current workspace user
   unsubProducts = db.collection('products').where('ownerId', '==', uid)
     .onSnapshot(snapshot => {
       products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       updateCurrentUIViews();
     }, () => showToast('Error linking products stream'));
 
-  // Real-time listener for Payments matching current workspace user
   unsubPayments = db.collection('payments').where('ownerId', '==', uid)
     .onSnapshot(snapshot => {
       payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -550,6 +1263,7 @@ function detachFirestoreListeners() {
 }
 
 function updateCurrentUIViews() {
+  sortCustomersList();
   renderBalanceList();
   renderCustomers();
   if (selectedCustomer) {
@@ -628,16 +1342,34 @@ function getBalance(cid) {
 function filterCustomerDropdown() {
   const q = document.getElementById('ec-search').value.toLowerCase().trim();
   const dl = document.getElementById('ec-dropdown');
-  if (!q) { dl.classList.add('hidden'); return; }
-  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
-  dl.innerHTML = filtered.map(c =>
-    `<div class="dropdown-item" onmousedown="selectEC('${c.id}','${c.name.replace(/'/g,"\\'")}')">
-      ${c.name} <span style="color:var(--gray-text);font-size:12px">· ${c.place}</span>
-    </div>`).join('');
-  dl.classList.toggle('hidden', filtered.length === 0);
+  sortCustomersList();
+  const filtered = q 
+    ? customers.filter(c => (c.name || '').toLowerCase().includes(q) || (c.place || '').toLowerCase().includes(q))
+    : customers;
+
+  if (!filtered.length) {
+    dl.innerHTML = `<div style="padding:12px;color:var(--text-muted);font-size:13px;text-align:center">No matching customers found</div>`;
+    dl.classList.remove('hidden');
+    return;
+  }
+
+  dl.innerHTML = filtered.map(c => {
+    const initial = (c.name || '?')[0].toUpperCase();
+    return `<div class="dropdown-item" onmousedown="selectEC('${c.id}','${c.name.replace(/'/g,"\\'")}')">
+      <span class="dropdown-avatar">${initial}</span>
+      <div style="flex:1">
+        <span class="dropdown-name">${escapeHTML(c.name)}</span>
+        <span class="dropdown-sub"> · 📍 ${escapeHTML(c.place || '—')}</span>
+      </div>
+    </div>`;
+  }).join('');
+  dl.classList.remove('hidden');
 }
 
-function showDropdown() { if (document.getElementById('ec-search').value) filterCustomerDropdown(); }
+function showDropdown() {
+  filterCustomerDropdown();
+}
+
 function hideDropdown(id) {
   clearTimeout(dropdownTimer);
   dropdownTimer = setTimeout(() => {
@@ -670,7 +1402,6 @@ async function saveEntry() {
       const phone = document.getElementById('nc-phone').value.trim();
       if (!name) { showToast('Enter customer name'); btn.disabled = false; return; }
       
-      // Duplicate validation constraint rule check
       if (customers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
         showToast('Customer already exists!'); btn.disabled = false; return;
       }
@@ -679,6 +1410,7 @@ async function saveEntry() {
       if (demoMode) {
         customerId = 'c_' + Date.now();
         customers.push({ id: customerId, ...newCustomerPayload });
+        sortCustomersList();
       } else {
         const cRef = await db.collection('customers').add(newCustomerPayload);
         customerId = cRef.id;
@@ -687,7 +1419,6 @@ async function saveEntry() {
       if (!customerId) { showToast('Select a customer'); btn.disabled = false; return; }
     }
 
-    // High reliability sequential write matching mobile repository requirements
     const today = new Date();
     const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
     const productPayload = { ownerId: uid, customerId, productName: pname, price: price, date: dateStr };
@@ -699,7 +1430,6 @@ async function saveEntry() {
       await db.collection('products').add(productPayload);
     }
 
-    // Clear input form contexts smoothly
     if (entryTab === 'new') {
       ['nc-name','nc-place','nc-phone'].forEach(id => document.getElementById(id).value = '');
     } else {
@@ -715,33 +1445,58 @@ async function saveEntry() {
 }
 
 // ══════════════════════════════════════════════════
-// BALANCE DISPLAY MANAGEMENT LAYER
+// BALANCE DISPLAY MANAGEMENT LAYER (ALPHABETICAL)
 // ══════════════════════════════════════════════════
 function renderBalanceList() {
   const searchInput = document.getElementById('balance-search');
   const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
-  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  sortCustomersList();
+  
+  const filtered = customers.filter(c => 
+    (c.name || '').toLowerCase().includes(q) || 
+    (c.place || '').toLowerCase().includes(q)
+  );
+  
   const el = document.getElementById('balance-list');
   if (!el) return;
   if (!filtered.length) {
-    el.innerHTML = `<div class="empty"><span class="emoji">👥</span><p>No transactions listed</p></div>`;
+    el.innerHTML = `<div class="empty"><span class="emoji">👥</span><p>${q ? 'No customers matching "' + escapeHTML(q) + '"' : 'No transactions listed'}</p></div>`;
     return;
   }
-  el.innerHTML = filtered.map(c => {
+
+  let lastLetter = '';
+  let html = `<div class="list-meta-bar">
+    <span>⚖️ <strong>${filtered.length}</strong> ${filtered.length === 1 ? 'account' : 'accounts'}</span>
+    <span class="sort-tag">A → Z Sorted</span>
+  </div>`;
+
+  filtered.forEach(c => {
+    const firstChar = (c.name || '?')[0].toUpperCase();
+    if (firstChar !== lastLetter) {
+      lastLetter = firstChar;
+      html += `<div class="alpha-divider">
+        <span class="alpha-badge">${firstChar}</span>
+        <div class="alpha-line"></div>
+      </div>`;
+    }
+
     const { balance } = getBalance(c.id);
     const isCleared = balance <= 0;
-    return `<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showCustomerDetail('${c.id}')">
-      <div class="customer-avatar">${c.name[0].toUpperCase()}</div>
+
+    html += `<div class="card customer-item" onclick="showCustomerDetail('${c.id}')">
+      <div class="customer-avatar">${firstChar}</div>
       <div style="flex:1">
-        <p style="font-weight:600;font-size:15px;color:var(--dark)">${c.name}</p>
-        <p style="font-size:12px;color:var(--gray-text);margin-top:2px">📍 ${c.place}</p>
+        <p class="cname">${escapeHTML(c.name)}</p>
+        <p class="cplace">📍 ${escapeHTML(c.place || '—')}</p>
       </div>
       <div style="text-align:right">
-        <p style="font-weight:700;font-size:16px;color:${isCleared ? 'var(--teal)' : 'var(--red)'};margin-bottom:4px">₹${balance.toFixed(2)}</p>
+        <p class="customer-balance ${isCleared ? 'badge-clear-text' : 'badge-due-text'}">₹${balance.toFixed(2)}</p>
         <span class="status-badge ${isCleared ? 'badge-clear' : 'badge-due'}">${isCleared ? '✓ Clear' : 'Due'}</span>
       </div>
     </div>`;
-  }).join('');
+  });
+
+  el.innerHTML = html;
 }
 
 function filterBalance() { renderBalanceList(); }
@@ -752,7 +1507,7 @@ function showCustomerDetail(cid) {
   document.getElementById('balance-list-view').classList.add('hidden');
   document.getElementById('customer-detail').classList.remove('hidden');
   document.getElementById('detail-name').textContent = selectedCustomer.name;
-  document.getElementById('detail-place').textContent = `📍 ${selectedCustomer.place}  📞 ${selectedCustomer.phone || '—'}`;
+  document.getElementById('detail-place').textContent = `📍 ${selectedCustomer.place || '—'}  📞 ${selectedCustomer.phone || '—'}`;
   updateDetailCard();
   renderDetailHistory();
 }
@@ -787,7 +1542,7 @@ function renderDetailHistory() {
     if (!items.length) { el.innerHTML = `<div class="empty"><span class="emoji">🛍️</span><p>No purchases recorded</p></div>`; return; }
     el.innerHTML = items.map(p => `<div class="history-item">
       <div class="history-icon purchase">🛒</div>
-      <div class="history-info"><div class="name">${p.productName}</div><div class="date">📅 ${p.date}</div></div>
+      <div class="history-info"><div class="name">${escapeHTML(p.productName)}</div><div class="date">📅 ${p.date}</div></div>
       <div class="history-actions">
         <div class="history-amount debit">−₹${parseFloat(p.price).toFixed(2)}</div>
         <button class="history-action-btn" onclick="openEditAmount('purchase','${p.id}')" title="Edit amount">✏</button>
@@ -808,40 +1563,59 @@ function renderDetailHistory() {
 }
 
 // ══════════════════════════════════════════════════
-// RECORD PAYMENTS PROCESSING
+// RECORD PAYMENTS PROCESSING (ALPHABETICAL)
 // ══════════════════════════════════════════════════
 function filterPayDropdown() {
   const q = document.getElementById('pay-search').value.toLowerCase().trim();
   const dl = document.getElementById('pay-dropdown');
-  if (!q) { dl.classList.add('hidden'); return; }
-  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  sortCustomersList();
+  
+  const filtered = q
+    ? customers.filter(c => (c.name || '').toLowerCase().includes(q) || (c.place || '').toLowerCase().includes(q))
+    : customers;
+
+  if (!filtered.length) {
+    dl.innerHTML = `<div style="padding:12px;color:var(--text-muted);font-size:13px;text-align:center">No matching customers found</div>`;
+    dl.classList.remove('hidden');
+    return;
+  }
+
   dl.innerHTML = filtered.map(c => {
     const { balance } = getBalance(c.id);
+    const initial = (c.name || '?')[0].toUpperCase();
     return `<div class="dropdown-item" onmousedown="selectPayCustomer('${c.id}')">
-      ${c.name} <span style="color:var(--red);font-size:12px">₹${balance.toFixed(2)}</span>
+      <span class="dropdown-avatar">${initial}</span>
+      <div style="flex:1">
+        <span class="dropdown-name">${escapeHTML(c.name)}</span>
+        <span class="dropdown-sub"> · 📍 ${escapeHTML(c.place || '—')}</span>
+      </div>
+      <span class="dropdown-balance ${balance <= 0 ? 'clear' : 'due'}">₹${balance.toFixed(2)}</span>
     </div>`;
   }).join('');
-  dl.classList.toggle('hidden', filtered.length === 0);
+  dl.classList.remove('hidden');
 }
 
-function showPayDropdown() { if (document.getElementById('pay-search').value) filterPayDropdown(); }
+function showPayDropdown() {
+  filterPayDropdown();
+}
 
 function selectPayCustomer(id) {
   paySelectedId = id;
   const c = customers.find(x => x.id === id);
+  if (!c) return;
   const { balance } = getBalance(id);
   document.getElementById('pay-search').value = c.name;
   document.getElementById('pay-dropdown').classList.add('hidden');
   const info = document.getElementById('pay-customer-info');
   info.style.display = 'block';
-  document.getElementById('pay-cname').textContent = `${c.name} · ${c.place}`;
+  document.getElementById('pay-cname').textContent = `${c.name} · ${c.place || '—'}`;
   document.getElementById('pay-cbalance').textContent = `${t('balance_due')}: ₹${balance.toFixed(2)}`;
 }
 
 async function savePayment() {
   if (!paySelectedId) { showToast('Select a customer'); return; }
   const amount = parseFloat(document.getElementById('pay-amount').value);
-  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid operational amount'); return; }
+  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid payment amount'); return; }
   
   const uid = demoMode ? 'demo-user' : auth.currentUser.uid;
   const today = new Date();
@@ -874,32 +1648,59 @@ async function savePayment() {
 }
 
 // ══════════════════════════════════════════════════
-// CUSTOMERS COMPONENT CONTROLLER
+// CUSTOMERS COMPONENT CONTROLLER (ALPHABETICAL)
 // ══════════════════════════════════════════════════
 function renderCustomers() {
   const q = (document.getElementById('cust-search') || { value: '' }).value.toLowerCase().trim();
-  const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.place.toLowerCase().includes(q));
+  sortCustomersList();
+  
+  const filtered = customers.filter(c => 
+    (c.name || '').toLowerCase().includes(q) || 
+    (c.place || '').toLowerCase().includes(q) || 
+    (c.phone || '').includes(q)
+  );
+
   const el = document.getElementById('customers-list');
   if (!el) return;
   if (!filtered.length) {
-    el.innerHTML = `<div class="empty"><span class="emoji">👥</span><p>No matching entities found</p></div>`;
+    el.innerHTML = `<div class="empty"><span class="emoji">👥</span><p>${q ? 'No customers matching "' + escapeHTML(q) + '"' : 'No customers registered'}</p></div>`;
     return;
   }
-  el.innerHTML = filtered.map(c => {
+
+  let lastLetter = '';
+  let html = `<div class="list-meta-bar">
+    <span>👥 <strong>${filtered.length}</strong> ${filtered.length === 1 ? 'customer' : 'customers'}</span>
+    <span class="sort-tag">A → Z Sorted</span>
+  </div>`;
+
+  filtered.forEach(c => {
+    const firstChar = (c.name || '?')[0].toUpperCase();
+    if (firstChar !== lastLetter) {
+      lastLetter = firstChar;
+      html += `<div class="alpha-divider">
+        <span class="alpha-badge">${firstChar}</span>
+        <div class="alpha-line"></div>
+      </div>`;
+    }
+
     const { balance } = getBalance(c.id);
     const itemCount = products.filter(p => p.customerId === c.id).length;
-    return `<div class="card customer-item" onclick="switchScreen('balance');setTimeout(()=>showCustomerDetail('${c.id}'),100)">
-      <div class="customer-avatar">${c.name[0].toUpperCase()}</div>
+    const isCleared = balance <= 0;
+
+    html += `<div class="card customer-item" onclick="switchScreen('balance');setTimeout(()=>showCustomerDetail('${c.id}'),100)">
+      <div class="customer-avatar">${firstChar}</div>
       <div class="customer-info" style="flex:1">
-        <div class="cname">${c.name}</div>
-        <div class="cplace">📍 ${c.place}${c.phone ? '  📞 ' + c.phone : ''}</div>
+        <div class="cname">${escapeHTML(c.name)}</div>
+        <div class="cplace">📍 ${escapeHTML(c.place || '—')}${c.phone ? ' · 📞 ' + escapeHTML(c.phone) : ''}</div>
       </div>
       <div style="text-align:right">
-        <div class="customer-balance" style="color:${balance <= 0 ? 'var(--teal)' : 'var(--red)'}">₹${balance.toFixed(2)}</div>
-        <div style="font-size:11px;color:var(--gray-text);margin-top:2px">${itemCount} items</div>
+        <div class="customer-balance ${isCleared ? 'badge-clear-text' : 'badge-due-text'}">₹${balance.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:600">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
       </div>
     </div>`;
-  }).join('');
+  });
+
+  el.innerHTML = html;
 }
 
 function filterCustomers() { renderCustomers(); }
@@ -934,7 +1735,7 @@ function generatePDF() {
   };
 
   const prodRows = prods.map(p =>
-    `<tr><td>${p.productName}</td><td>${p.date}</td><td style="text-align:right">₹${parseFloat(p.price).toFixed(2)}</td></tr>`
+    `<tr><td>${escapeHTML(p.productName)}</td><td>${p.date}</td><td style="text-align:right">₹${parseFloat(p.price).toFixed(2)}</td></tr>`
   ).join('');
 
   const payRows = pays.map(p =>
@@ -944,49 +1745,49 @@ function generatePDF() {
   const html = `<!DOCTYPE html>
 <html><head>
 <meta charset="UTF-8">
-<title>Varavu — ${c.name}</title>
+<title>Varavu — ${escapeHTML(c.name)}</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 32px; max-width: 700px; margin: 0 auto; color: #212121; }
-  .header { background: #1565C0; color: white; padding: 20px 24px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
-  .header h1 { font-size: 24px; margin: 0; }
-  .header p { margin: 0; opacity: 0.85; font-size: 13px; }
-  h2 { font-size: 16px; color: #1565C0; border-bottom: 2px solid #1565C0; padding-bottom: 6px; margin: 20px 0 12px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 32px; max-width: 720px; margin: 0 auto; color: #0F172A; background:#fff; }
+  .header { background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%); color: white; padding: 22px 26px; border-radius: 12px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 16px rgba(37,99,235,0.2); }
+  .header h1 { font-size: 24px; margin: 0; font-weight: 800; }
+  .header p { margin: 4px 0 0 0; opacity: 0.9; font-size: 13px; }
+  h2 { font-size: 16px; font-weight: 700; color: #1E3A8A; border-bottom: 2px solid #2563EB; padding-bottom: 6px; margin: 24px 0 12px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  th { background: #E3F2FD; color: #1565C0; padding: 8px 10px; text-align: left; font-size: 13px; }
-  td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-  .summary { background: #FFEBEE; border: 2px solid #C62828; border-radius: 8px; padding: 16px 20px; margin-top: 20px; }
-  .summary p { margin: 4px 0; font-size: 14px; }
-  .summary .bal { font-size: 22px; font-weight: 700; color: #C62828; margin-top: 8px; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-  .info-item { background: #f5f5f5; padding: 10px 14px; border-radius: 6px; }
-  .info-item .lbl { font-size: 11px; color: #757575; margin-bottom: 2px; }
-  .info-item .val { font-weight: 600; font-size: 14px; }
+  th { background: #EFF6FF; color: #1E3A8A; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 700; border-bottom: 1px solid #DBEAFE; }
+  td { padding: 9px 12px; border-bottom: 1px solid #F1F5F9; font-size: 13px; }
+  .summary { background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 12px; padding: 18px 22px; margin-top: 24px; }
+  .summary p { margin: 4px 0; font-size: 14px; color: #334155; }
+  .summary .bal { font-size: 24px; font-weight: 800; color: #DC2626; margin-top: 10px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .info-item { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 8px; }
+  .info-item .lbl { font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 2px; text-transform: uppercase; }
+  .info-item .val { font-weight: 600; font-size: 14px; color: #0F172A; }
   @media print { body { padding: 16px; } }
 </style>
 </head><body>
 <div class="header">
   <div><h1>${L.title}</h1><p>${L.report}</p></div>
-  <div style="text-align:right;font-size:12px;opacity:0.85">${new Date().toLocaleDateString()}</div>
+  <div style="text-align:right;font-size:12.5px;opacity:0.9">${new Date().toLocaleDateString()}</div>
 </div>
 <h2>${L.custDetails}</h2>
 <div class="info-grid">
-  <div class="info-item"><div class="lbl">${L.name}</div><div class="val">${c.name}</div></div>
-  <div class="info-item"><div class="lbl">${L.place}</div><div class="val">${c.place}</div></div>
-  ${c.phone ? `<div class="info-item"><div class="lbl">${L.phone}</div><div class="val">${c.phone}</div></div>` : ''}
+  <div class="info-item"><div class="lbl">${L.name}</div><div class="val">${escapeHTML(c.name)}</div></div>
+  <div class="info-item"><div class="lbl">${L.place}</div><div class="val">${escapeHTML(c.place || '—')}</div></div>
+  ${c.phone ? `<div class="info-item"><div class="lbl">${L.phone}</div><div class="val">${escapeHTML(c.phone)}</div></div>` : ''}
 </div>
 <h2>${L.purchases}</h2>
 <table>
   <thead><tr><th>${L.product}</th><th>${L.date}</th><th style="text-align:right">${L.amount}</th></tr></thead>
-  <tbody>${prodRows || `<tr><td colspan="3" style="text-align:center;color:#757575">No purchases</td></tr>`}</tbody>
+  <tbody>${prodRows || `<tr><td colspan="3" style="text-align:center;color:#64748B;padding:14px">No purchases</td></tr>`}</tbody>
 </table>
 <h2>${L.payments}</h2>
 <table>
   <thead><tr><th>${L.date}</th><th>${L.time}</th><th style="text-align:right">${L.amount}</th></tr></thead>
-  <tbody>${payRows || `<tr><td colspan="3" style="text-align:center;color:#757575">No payments</td></tr>`}</tbody>
+  <tbody>${payRows || `<tr><td colspan="3" style="text-align:center;color:#64748B;padding:14px">No payments</td></tr>`}</tbody>
 </table>
 <div class="summary">
   <p>${L.totalPurch}: <strong>₹${totalP.toFixed(2)}</strong></p>
-  <p>${L.totalPaid}: <strong style="color:#00897B">₹${totalPay.toFixed(2)}</strong></p>
+  <p>${L.totalPaid}: <strong style="color:#059669">₹${totalPay.toFixed(2)}</strong></p>
   <div class="bal">${L.balanceDue}: ₹${balance.toFixed(2)}</div>
 </div>
 </body></html>`;
@@ -1028,11 +1829,13 @@ function openEditAmount(type, id) {
     inputEl.value = parseFloat(item.amount || 0).toFixed(2);
   }
 
+  document.getElementById('modal-backdrop').classList.remove('hidden');
   document.getElementById('edit-amount-modal').classList.remove('hidden');
 }
 
 function cancelEditAmount() {
   document.getElementById('edit-amount-modal').classList.add('hidden');
+  document.getElementById('modal-backdrop').classList.add('hidden');
   amountEditMode = null;
   amountEditId = null;
 }
@@ -1070,18 +1873,25 @@ async function saveAmountEdits() {
 }
 
 // ══════════════════════════════════════════════════
-// EDIT / DELETE CUSTOMER - open modal, save edits, cascade delete
+// EDIT / DELETE CUSTOMER
 // ══════════════════════════════════════════════════
 function openEditCustomer() {
   if (!selectedCustomer) return;
   document.getElementById('edit-name').value = selectedCustomer.name || '';
   document.getElementById('edit-place').value = selectedCustomer.place || '';
   document.getElementById('edit-phone').value = selectedCustomer.phone || '';
+  document.getElementById('modal-backdrop').classList.remove('hidden');
   document.getElementById('edit-customer-modal').classList.remove('hidden');
 }
 
 function cancelEditCustomer() {
   document.getElementById('edit-customer-modal').classList.add('hidden');
+  document.getElementById('modal-backdrop').classList.add('hidden');
+}
+
+function closeAllModals() {
+  cancelEditCustomer();
+  cancelEditAmount();
 }
 
 async function saveCustomerEdits() {
@@ -1102,6 +1912,7 @@ async function saveCustomerEdits() {
         customers[idx] = { ...customers[idx], ...payload };
         selectedCustomer = customers[idx];
       }
+      sortCustomersList();
       updateCurrentUIViews();
     } else {
       await db.collection('customers').doc(id).update(payload);
@@ -1110,6 +1921,7 @@ async function saveCustomerEdits() {
         customers[idx] = { ...customers[idx], ...payload };
         selectedCustomer = customers[idx];
       }
+      sortCustomersList();
       updateCurrentUIViews();
     }
     cancelEditCustomer();
@@ -1141,7 +1953,6 @@ async function doDeleteCustomer(id) {
       return;
     }
 
-    // Firestore: delete customer doc and related products/payments
     await db.collection('customers').doc(id).delete();
 
     const prodSnap = await db.collection('products').where('ownerId', '==', uid).where('customerId', '==', id).get();
